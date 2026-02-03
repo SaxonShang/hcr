@@ -79,10 +79,12 @@ Visualization Manager:
       Style: Points
       Size (Pixels): 2
       Size (m): 0.02
-      Color Transformer: Intensity
-      Intensity Transformer: Intensity
-      Min Intensity: 0
-      Max Intensity: 4096
+      # map_manager clouds do not contain an "intensity" field, so use AxisColor.
+      Color Transformer: AxisColor
+      Axis: Z
+      Autocompute Value Bounds: true
+      Min Value: 0
+      Max Value: 2
       Use Fixed Frame: true
     - Class: rviz/PointCloud2
       Enabled: false
@@ -93,11 +95,30 @@ Visualization Manager:
       Style: Points
       Size (Pixels): 2
       Size (m): 0.02
-      Color Transformer: Intensity
-      Intensity Transformer: Intensity
-      Min Intensity: 0
-      Max Intensity: 4096
+      Color Transformer: AxisColor
+      Axis: Z
+      Autocompute Value Bounds: true
+      Min Value: 0
+      Max Value: 2
       Use Fixed Frame: true
+
+    - Class: rviz/Map
+      Enabled: true
+      Name: Global Costmap
+      Topic: /move_base/global_costmap/costmap
+      Queue Size: 10
+      Alpha: 0.7
+      Color Scheme: map
+      Draw Behind: false
+
+    - Class: rviz/Map
+      Enabled: true
+      Name: Local Costmap
+      Topic: /move_base/local_costmap/costmap
+      Queue Size: 10
+      Alpha: 0.7
+      Color Scheme: map
+      Draw Behind: false
     - Class: rviz/MarkerArray
       Enabled: true
       Name: MarkerArray Dynamic Boxes

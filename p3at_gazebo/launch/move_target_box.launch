@@ -1,0 +1,19 @@
+<launch>
+  <arg name="model_name" default="target_box" />
+  <arg name="center_x" default="5.0" />
+  <arg name="center_y" default="0.0" />
+  <arg name="radius" default="1.5" />
+  <arg name="omega" default="0.25" />
+  <arg name="z" default="0.75" />
+  <arg name="rate_hz" default="20.0" />
+
+  <node pkg="p3at_gazebo" type="move_target_box.py" name="move_target_box" output="screen">
+    <param name="model_name" value="$(arg model_name)" />
+    <param name="center_x" value="$(arg center_x)" />
+    <param name="center_y" value="$(arg center_y)" />
+    <param name="radius" value="$(arg radius)" />
+    <param name="omega" value="$(arg omega)" />
+    <param name="z" value="$(arg z)" />
+    <param name="rate_hz" value="$(arg rate_hz)" />
+  </node>
+</launch>
