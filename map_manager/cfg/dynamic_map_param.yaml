@@ -1,0 +1,142 @@
+# Dynamic map configuration for a ground robot (Pioneer 3-AT style) in Gazebo.
+#
+# Minimal things you usually edit for your system:
+#   - localization_mode + pose_topic or odom_topic
+#   - depth_image_topic
+#   - depth_intrinsics (fx, fy, cx, cy)
+#   - depth_scale_factor
+#   - body_to_camera (if your camera is mounted differently)
+#
+# Notes on depth_scale_factor:
+#   - If depth image encoding is 32FC1 in meters (common in Gazebo), keep 1000.
+#     The code converts float meters to uint16 "mm" by multiplying this scale.
+#   - If depth image encoding is 16UC1 in millimeters (common for RealSense drivers), also use 1000.
+
+# 0: PoseStamped on pose_topic
+# 1: Odometry on odom_topic (recommended for ground robots)
+localization_mode: 1
+
+# Topics (set these to match your simulation)
+# If your depth topic is different, change it here or override via launch args.
+depth_image_topic: /camera/depth
+pose_topic: /robot/pose
+odom_topic: /odom
+
+# Robot size [x, y, z] in meters (used for collision related logic)
+robot_size: [0.55, 0.55, 0.30]
+
+# Camera Parameters
+# depth_intrinsics: [fx, fy, cx, cy]
+# Set these from /camera/depth/camera_info once your Gazebo camera is running.
+depth_intrinsics: [554.254691191187, 554.254691191187, 320.5, 240.5]
+
+# Scale used to convert TYPE_32FC1 depth (meters) to uint16 (depthScaleFactor * meters).
+# Also used as inv_factor when projecting points: depth_m = depth_uint16 / depthScaleFactor.
+depth_scale_factor: 1000
+
+# Depth filtering
+# Units are meters after projection.
+depth_min_value: 0.5
+depth_max_value: 5.0
+depth_filter_margin: 2
+depth_skip_pixel: 2
+image_cols: 640
+image_rows: 480
+
+# body_to_camera is a 4x4 transform (row-major) from robot/body frame to camera frame.
+# Update this if your URDF mount differs.
+body_to_camera: [0.0,  0.0,  1.0,  0.09,
+                -1.0,  0.0,  0.0,  0.0 ,
+                 0.0, -1.0,  0.0,  0.095,
+                 0.0,  0.0,  0.0,  1.0]
+
+# Raycasting
+raycast_max_length: 5.0
+p_hit: 0.70
+p_miss: 0.35
+p_min: 0.12
+p_max: 0.97
+p_occ: 0.80
+
+# Map
+map_resolution: 0.1
+ground_height: -0.1
+map_size: [20, 20, 3]
+local_update_range: [5, 5, 3]
+local_bound_inflation: 3.0
+clean_local_map: false
+
+# Visualization
+local_map_size: [20, 20, 6]
+max_height_visualization: 2.5
+visualize_global_map: true
+verbose: false
+
+# Dynamic map parameters
+
+# Map refinement (IMPORTANT: key name must match what the code reads)
+map_refinement_inflation_coefficient: 1.15
+
+# Sizes limits for raw box from UV_detector
+raw_box_width_limit_lower: 0.2
+raw_box_height_limit_lower: 1.0
+raw_box_width_limit_upper: 1.3
+raw_box_height_limit_upper: 2.0
+map_refine_floor: 0.2
+
+# Dynamic region clean
+pre_history_clean_size: 50
+hist_clean_skip: 1
+clean_extra_dist: 0.2
+ground_thickness: 0.0
+
+# Track and estimate velocity
+timestep: 0.033
+overlap_threshold: 0.3
+# For Gazebo simulation, 0.0 is often easier to start with.
+# For real world, try 0.2 as the repo comment suggests.
+continuity_thresh: 0.0
+velocity_threshold: 0.4
+
+# Track and identify dynamic
+fov_x_margin: 3
+fov_y_margin: 0
+
+# Kalman Filter
+e_p: 0.3
+e_q: 0.002
+e_r: 0.3
+
+# Identify dynamic objects
+avg_velocty_history_size: 10
+now_history_size: 20
+continuity_filter_history_size: 20
+continuity_filter_interval: 10
+size_ratio_lower: 0.2
+size_ratio_upper: 0.7
+
+# Size limits for fused boxes
+fused_box_width_limit_lower: 0.4
+fused_box_height_limit_lower: 1.3
+fused_box_width_limit_upper: 1.2
+fused_box_height_limit_upper: 2.0
+lowest_point_limit: 0.2
+
+# Second layer detect
+static_thresh: 4
+dynamic_thresh: 16
+vote_history_size: 20
+
+# Trajectory prediction
+n: 5
+t: 2
+colli_check_end_dist: 3.0
+colli_check_start_dist: 1.0
+
+P_T:  [ 0.4637, 0.2812, 0.1182, 0.0729, 0.064,
+        0.3004, 0.4955, 0.3004, 0.1262, 0.0789,
+        0.1369, 0.3258, 0.5373, 0.3258, 0.1369,
+        0.0789, 0.1262, 0.3004, 0.4955, 0.3004,
+        0.0640, 0.0729, 0.1182, 0.2812, 0.4637]
+
+P_I:  [0.3162, 0.7499, 1, 0.7499, 0.3162]

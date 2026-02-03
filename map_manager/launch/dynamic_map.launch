@@ -1,0 +1,32 @@
+<launch>
+  <!--
+    Launch dynamic_map with easy overrides.
+
+    Example:
+      roslaunch map_manager dynamic_map_p3at.launch \
+        depth_topic:=/camera/depth \
+        odom_topic:=/odom
+
+    If you use PoseStamped instead of Odometry:
+      roslaunch map_manager dynamic_map_p3at.launch localization_mode:=0 pose_topic:=/robot/pose
+  -->
+
+  <arg name="cfg" default="$(find map_manager)/cfg/dynamic_map_param.yaml"/>
+  <arg name="localization_mode" default="1"/>
+  <arg name="depth_topic" default="/camera/depth"/>
+  <arg name="odom_topic" default="/odom"/>
+  <arg name="pose_topic" default="/robot/pose"/>
+  <arg name="depth_scale_factor" default="1000"/>
+
+  <!-- Load config first -->
+  <rosparam file="$(arg cfg)" ns="/dynamic_map"/>
+
+  <!-- Override the handful of common integration parameters -->
+  <param name="/dynamic_map/localization_mode" value="$(arg localization_mode)"/>
+  <param name="/dynamic_map/depth_image_topic" value="$(arg depth_topic)"/>
+  <param name="/dynamic_map/odom_topic" value="$(arg odom_topic)"/>
+  <param name="/dynamic_map/pose_topic" value="$(arg pose_topic)"/>
+  <param name="/dynamic_map/depth_scale_factor" value="$(arg depth_scale_factor)"/>
+
+  <node pkg="map_manager" type="dynamic_map_node" name="dynamic_map_node" output="screen" />
+</launch>
