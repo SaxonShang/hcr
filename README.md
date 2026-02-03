@@ -1,3 +1,50 @@
+# hcr: Gazebo + RViz demo workspace
+
+This repo is a ROS1 Noetic catkin workspace (or a `src/` subtree) that brings up:
+
+- A Pioneer 3-AT style skid-steer robot in Gazebo, with an RGB-D depth camera.
+- `map_manager` for voxel mapping and dynamic obstacle detection (publishes PointCloud2 and MarkerArray).
+- `move_base` configured to use the `map_manager` inflated PointCloud2 as an obstacle source.
+- A simple `target_follower` node that repeatedly sends goals to `move_base` based on the detected dynamic target.
+
+## Quick start
+
+1) Put this repo inside your catkin workspace `src/`:
+
+- `~/catkin_ws/src/hcr`
+
+2) Install dependencies (typical set):
+
+- ROS Noetic desktop-full
+- `gazebo_ros_pkgs`, `gazebo_plugins`
+- `pcl_ros`, `pcl_conversions`
+- `tf2`, `tf2_ros`, `tf2_geometry_msgs`
+- `image_transport`, `message_filters`, `cv_bridge`
+
+3) Build:
+
+- `cd ~/catkin_ws && catkin_make`
+- `source devel/setup.bash`
+
+4) Run the full simulation:
+
+- `roslaunch p3at_gazebo bringup_all_sim.launch`
+
+This launches Gazebo, map_manager, move_base, target follower, and RViz with a working config:
+
+- `p3at_gazebo/rviz/p3at_hcr.rviz`
+
+## Key topics
+
+- Depth image: `/camera/depth`
+- Odometry: `/odom`
+- Inflated obstacle cloud (for navigation): `/dynamic_map/inflated_voxel_map`
+- Dynamic target position: `/dynamic_map/dynamic_pos`
+- Dynamic boxes (MarkerArray): `/dynamic_map/box_visualization_marker`
+
+
+---
+
 # Integration Notes: Using `map_manager_pub` in a P3AT Ground Robot Project
 
 This document describes how we use the upstream repository `Shawn207/map_manager_pub` as a component inside our ROS1 Noetic simulation and navigation stack.
@@ -39,7 +86,7 @@ We utilize the following parts of the upstream repo:
   - trajectory prediction markers
 
 4) **RViz config**
-- `map_manager/rviz/map.rviz`  
+- `p3at_gazebo/rviz/p3at_hcr.rviz`  
   Used as a starting point for visualization in RViz.
 
 In our local build, we also observe extra published debug and helper topics beyond the upstream README, including UV depth debug streams and a representative dynamic target position topic that we use for following behavior.

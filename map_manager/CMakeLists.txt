@@ -7,7 +7,25 @@ set(CMAKE_CXX_FLAGS "-std=c++14 ${CMAKE_CXX_FLAGS} -O3 -Wall")
 
 
 ## Find catkin macros and libraries
-## if COMPONENTS list like find_package(catkin REQUIRED COMPONENTS xyz)
+## if COMPONENTS list like find_package(catkin REQUIRED COMPONENTS
+  roscpp
+  rospy
+  std_msgs
+  sensor_msgs
+  nav_msgs
+  geometry_msgs
+  visualization_msgs
+  octomap_ros
+  message_generation
+  cv_bridge
+  message_filters
+  image_transport
+  tf2
+  tf2_ros
+  tf2_geometry_msgs
+  pcl_ros
+  pcl_conversions
+)
 ## is used, also find other catkin packages
 find_package(catkin REQUIRED COMPONENTS
   roscpp
@@ -24,6 +42,7 @@ find_package(catkin REQUIRED COMPONENTS
 # find_package(Boost REQUIRED COMPONENTS system)
 find_package(Eigen3 REQUIRED)
 find_package(PCL 1.7 REQUIRED)
+find_package(OpenCV REQUIRED)
 
 ## Uncomment this if the package has a setup.py. This macro ensures
 ## modules and global scripts declared therein get installed
@@ -48,7 +67,7 @@ find_package(PCL 1.7 REQUIRED)
 ##   * add "message_generation" and every package in MSG_DEP_SET to
 ##     find_package(catkin REQUIRED COMPONENTS ...)
 ##   * add "message_runtime" and every package in MSG_DEP_SET to
-##     catkin_package(CATKIN_DEPENDS ...)
+##     catkin_package(CATKIN_DEPENDS roscpp rospy std_msgs sensor_msgs nav_msgs geometry_msgs visualization_msgs cv_bridge image_transport message_filters tf2 tf2_ros tf2_geometry_msgs pcl_ros pcl_conversions octomap_ros
 ##   * uncomment the add_*_files sections below as needed
 ##     and list every .msg/.srv/.action file to be processed
 ##   * uncomment the generate_messages entry below
@@ -108,13 +127,13 @@ generate_messages(
 ## Declare things to be passed to dependent projects
 ## INCLUDE_DIRS: uncomment this if your package contains header files
 ## LIBRARIES: libraries you create in this project that dependent projects also need
-## CATKIN_DEPENDS: catkin_packages dependent projects also need
+## CATKIN_DEPENDS roscpp rospy std_msgs sensor_msgs nav_msgs geometry_msgs visualization_msgs cv_bridge image_transport message_filters tf2 tf2_ros tf2_geometry_msgs pcl_ros pcl_conversions octomap_ros
 ## DEPENDS: system dependencies of this project that dependent projects also need
 catkin_package(
  INCLUDE_DIRS include
  LIBRARIES map_manager
- CATKIN_DEPENDS roscpp rospy std_msgs cv_bridge
- DEPENDS PCL
+ CATKIN_DEPENDS roscpp rospy std_msgs sensor_msgs nav_msgs geometry_msgs visualization_msgs cv_bridge image_transport message_filters tf2 tf2_ros tf2_geometry_msgs pcl_ros pcl_conversions octomap_ros
+ DEPENDS PCL OpenCV
 )
 
 ###########
@@ -128,6 +147,7 @@ include_directories(
   ${catkin_INCLUDE_DIRS}
   ${Eigen3_INCLUDE_DIRS}
   ${PCL_INCLUDE_DIRS}
+  ${OpenCV_INCLUDE_DIRS}
 )
 
 ## Declare a C++ library
@@ -138,7 +158,6 @@ add_library(${PROJECT_NAME} include/${PROJECT_NAME}/occupancyMap.cpp
                             include/${PROJECT_NAME}/raycast.cpp
                             include/${PROJECT_NAME}/dynamicMap.cpp
                             include/${PROJECT_NAME}/detector/kalman_filter.cpp
-                            include/${PROJECT_NAME}/detector/boxDetector.cpp
                             include/${PROJECT_NAME}/detector/uv_detector.cpp)
 
 ## Add cmake target dependencies of the library
@@ -169,8 +188,8 @@ add_dependencies(${PROJECT_NAME} ${PROJECT_NAME}_generate_messages_cpp)
 # target_link_libraries(${PROJECT_NAME}_node
 #   ${catkin_LIBRARIES}
 # )
-target_link_libraries(${PROJECT_NAME} ${catkin_LIBRARIES})
-target_link_libraries(dynamic_map_node ${catkin_LIBRARIES} ${PROJECT_NAME})
+target_link_libraries(${PROJECT_NAME} ${catkin_LIBRARIES} ${PCL_LIBRARIES} ${OpenCV_LIBS})
+target_link_libraries(dynamic_map_node ${catkin_LIBRARIES} ${PROJECT_NAME} ${PCL_LIBRARIES} ${OpenCV_LIBS})
 
 
 #############
@@ -214,6 +233,12 @@ install(DIRECTORY include/${PROJECT_NAME}/
 #   # myfile2
 #   DESTINATION ${CATKIN_PACKAGE_SHARE_DESTINATION}
 # )
+
+
+## Mark other files for installation
+install(DIRECTORY launch cfg rviz
+  DESTINATION ${CATKIN_PACKAGE_SHARE_DESTINATION}
+)
 
 #############
 ## Testing ##

@@ -514,6 +514,7 @@ namespace mapManager{
 		this->publish3dBox(this->rawBox3Ds_, this->rawBoxPub_, 'g');
 		this->publish3dBox(this->fusedBox3Ds_, this->fusedBoxPub_, 'r');
 		this->publish3dBox(this->dynamicObjs_, this->dynamicBoxPub_, 'b');
+		this->publishVelAndPos(this->dynamicObjs_);
 
 	}
 

@@ -15,6 +15,6 @@ find_package(catkin REQUIRED COMPONENTS
 
 catkin_package()
 
-install(DIRECTORY launch urdf worlds
+install(DIRECTORY launch urdf worlds rviz
   DESTINATION ${CATKIN_PACKAGE_SHARE_DESTINATION}
 )

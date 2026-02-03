@@ -3,6 +3,7 @@
   <arg name="y" default="0.0" />
   <arg name="z" default="0.1" />
   <arg name="yaw" default="0.0" />
+  <arg name="use_joint_state_publisher" default="false" />
 
   <param name="robot_description"
          command="$(find xacro)/xacro '$(find p3at_gazebo)/urdf/p3at.urdf.xacro'" />
@@ -13,8 +14,8 @@
 
   <node pkg="robot_state_publisher" type="robot_state_publisher" name="robot_state_publisher" output="screen">
     <param name="publish_frequency" value="50.0" />
-  </node>
-
-  <!-- Joint state publisher is optional. Gazebo drive plugins may publish joint states already. -->
-  <node pkg="joint_state_publisher" type="joint_state_publisher" name="joint_state_publisher" output="screen" />
+  </node>  <!-- Joint state publisher is optional. Enable if your Gazebo plugins do not publish /joint_states. -->
+  <group if="$(arg use_joint_state_publisher)">
+    <node pkg="joint_state_publisher" type="joint_state_publisher" name="joint_state_publisher" output="screen" />
+  </group>
 </launch>

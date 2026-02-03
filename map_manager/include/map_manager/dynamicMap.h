@@ -9,8 +9,11 @@
 
 #include <map_manager/occupancyMap.h>
 #include <nav_msgs/Path.h>
-#include <map_manager/detector/boxDetector.cpp>
+#include <map_manager/detector/boxDetector.h>
 #include <opencv2/opencv.hpp>
+#include <deque>
+#include <set>
+#include <memory>
 #include <Eigen/Eigen>
 #include <Eigen/StdVector>
 #include <unsupported/Eigen/MatrixFunctions>
@@ -19,6 +22,7 @@
 // using namespace std;
 namespace mapManager{
 
+	using MatrixXd = Eigen::MatrixXd;
 	class dynamicMap : public occMap{
 	private:
 		ros::NodeHandle nh_;
@@ -102,8 +106,8 @@ namespace mapManager{
 		ros::Timer obstacleTrajPubTimer_;
 		std::shared_ptr<mapManager::boxDetector> detector_;
 		std::vector<box3D> rawBox3Ds_;
-		std::vector<Rect> box2Ds_;
-		std::vector<Rect> boxBirds_;
+		std::vector<cv::Rect> box2Ds_;
+		std::vector<cv::Rect> boxBirds_;
 		visualization_msgs::MarkerArray box3dRawMarkerLines;
 
 
@@ -259,7 +263,7 @@ namespace mapManager{
 		// toolbox functions
 		template <typename T> T norm(const T &x, const T &y);
 		template <typename T> T distance(const T &Ax, const T &Ay, const T &Bx, const T &By);
-		bool isInFov(const Rect &box2d) ;
+		bool isInFov(const cv::Rect &box2d) ;
 		bool checkTrack(const box3D &now, const box3D &pre);
 		bool isCopyOccupied(const Eigen::Vector3d& pos);
 		bool isCopyOccupied(const Eigen::Vector3i& idx); // does not count for unknown
@@ -308,7 +312,7 @@ namespace mapManager{
 		nowVar = income;
 	}
 
-	inline bool dynamicMap::isInFov(const Rect &box2d) {
+	inline bool dynamicMap::isInFov(const cv::Rect &box2d) {
 		return (box2d.tl().x>this->fovXMarginLower_ && box2d.br().x <this->fovXMarginUpper_ && box2d.tl().y >this->fovYMarginLower_ && box2d.br().y <this->fovYMarginUpper_ );
 	}	
 
