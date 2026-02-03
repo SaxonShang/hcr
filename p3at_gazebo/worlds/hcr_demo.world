@@ -1,0 +1,104 @@
+<?xml version="1.0" ?>
+<sdf version="1.6">
+  <world name="hcr_demo">
+    <include>
+      <uri>model://sun</uri>
+    </include>
+    <include>
+      <uri>model://ground_plane</uri>
+    </include>
+
+    <!-- Static obstacles for mapping and visualization -->
+    <model name="box_obstacle_1">
+      <static>true</static>
+      <pose>2 1 0.5 0 0 0</pose>
+      <link name="link">
+        <collision name="collision">
+          <geometry>
+            <box><size>1 1 1</size></box>
+          </geometry>
+        </collision>
+        <visual name="visual">
+          <geometry>
+            <box><size>1 1 1</size></box>
+          </geometry>
+        </visual>
+      </link>
+    </model>
+
+    <model name="box_obstacle_2">
+      <static>true</static>
+      <pose>4 -1 0.5 0 0 0</pose>
+      <link name="link">
+        <collision name="collision">
+          <geometry>
+            <box><size>1 1 1</size></box>
+          </geometry>
+        </collision>
+        <visual name="visual">
+          <geometry>
+            <box><size>1 1 1</size></box>
+          </geometry>
+        </visual>
+      </link>
+    </model>
+
+    <model name="wall_left">
+      <static>true</static>
+      <pose>3 2.5 0.5 0 0 0</pose>
+      <link name="link">
+        <collision name="collision">
+          <geometry>
+            <box><size>8 0.2 1</size></box>
+          </geometry>
+        </collision>
+        <visual name="visual">
+          <geometry>
+            <box><size>8 0.2 1</size></box>
+          </geometry>
+        </visual>
+      </link>
+    </model>
+
+    <model name="wall_right">
+      <static>true</static>
+      <pose>3 -2.5 0.5 0 0 0</pose>
+      <link name="link">
+        <collision name="collision">
+          <geometry>
+            <box><size>8 0.2 1</size></box>
+          </geometry>
+        </collision>
+        <visual name="visual">
+          <geometry>
+            <box><size>8 0.2 1</size></box>
+          </geometry>
+        </visual>
+      </link>
+    </model>
+
+    <!-- A tall box you can move manually in Gazebo to generate a dynamic target (optional). -->
+    <model name="target_box">
+      <static>false</static>
+      <pose>5 0 0.75 0 0 0</pose>
+      <link name="link">
+        <gravity>false</gravity>
+        <collision name="collision">
+          <geometry>
+            <box><size>0.6 0.6 1.5</size></box>
+          </geometry>
+        </collision>
+        <visual name="visual">
+          <geometry>
+            <box><size>0.6 0.6 1.5</size></box>
+          </geometry>
+          <material>
+            <ambient>1 0 0 1</ambient>
+            <diffuse>1 0 0 1</diffuse>
+          </material>
+        </visual>
+      </link>
+    </model>
+
+  </world>
+</sdf>

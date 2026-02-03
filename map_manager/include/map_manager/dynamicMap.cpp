@@ -6,6 +6,8 @@
 
 #include <ros/ros.h>
 #include <map_manager/dynamicMap.h>
+#include <cmath>
+#include <limits>
 
 namespace mapManager{
 	dynamicMap::dynamicMap(){
@@ -1361,179 +1363,169 @@ namespace mapManager{
 	}
 
 	void dynamicMap::publishVelAndPos(const std::vector<box3D> &dynamicObjs){
+		if (dynamicObjs.empty()) {
+			return;
+		}
+
+		// Publish a single "best" target to keep downstream consumers (like target_follower)
+		// stable. Prefer the fastest target; fall back to the closest if speeds are tiny.
+		size_t best_i = 0;
+		double best_v = -1.0;
+		for (size_t i = 0; i < dynamicObjs.size(); i++) {
+			double v = norm(dynamicObjs[i].Vx, dynamicObjs[i].Vy);
+			if (v > best_v) {
+				best_v = v;
+				best_i = i;
+			}
+		}
+		if (best_v < 1e-2) {
+			double best_d = std::numeric_limits<double>::infinity();
+			for (size_t i = 0; i < dynamicObjs.size(); i++) {
+				double dx = double(dynamicObjs[i].x) - this->position_(0);
+				double dy = double(dynamicObjs[i].y) - this->position_(1);
+				double d = std::sqrt(dx * dx + dy * dy);
+				if (d < best_d) {
+					best_d = d;
+					best_i = i;
+				}
+			}
+		}
+
 		std_msgs::Float64 velocity;
 		geometry_msgs::PointStamped p;
-		for (size_t i=0 ; i<dynamicObjs.size() ; i++){
-			double v = norm(dynamicObjs[i].Vx, dynamicObjs[i].Vy);
-			velocity.data = v;
-			p.header.frame_id = "map";
-			p.header.stamp = ros::Time::now();
-			p.point.x = dynamicObjs[i].x;
-			p.point.y = dynamicObjs[i].y;
-			p.point.z = dynamicObjs[i].z;
-			this->dynamicVelPub_.publish(velocity);
-			this->dynamicPosPub_.publish(p);
-		}
+		velocity.data = std::max(0.0, best_v);
+		p.header.frame_id = "map";
+		p.header.stamp = ros::Time::now();
+		p.point.x = dynamicObjs[best_i].x;
+		p.point.y = dynamicObjs[best_i].y;
+		p.point.z = dynamicObjs[best_i].z;
+		this->dynamicVelPub_.publish(velocity);
+		this->dynamicPosPub_.publish(p);
 	}
 
 
 	void dynamicMap::publish3dBox(const std::vector<box3D> &boxes, const ros::Publisher &publisher, const char &color) {
 
-		// visualization using bounding boxes 
-		visualization_msgs::Marker line;
+		// Publish one marker per box.
 		visualization_msgs::MarkerArray lines;
-		line.header.frame_id = "map";
-		line.type = visualization_msgs::Marker::LINE_LIST;
-		line.action = visualization_msgs::Marker::ADD;
-		line.ns = "box3D";	
-		line.scale.x = 0.1;
-
-		if (color=='g') {
-			line.color.g = 1.0;
-		}
-		else if (color=='b') {
-			line.color.b = 1.0;
-		}
-		else {
-			line.color.r = 1.0;
-		}
-
-		line.color.a = 1.0;
-		line.lifetime = ros::Duration(0.1);
-
-		for(size_t i = 0; i < boxes.size(); i++){
-			// visualization msgs
-
-			double x = boxes[i].x; 
-			double y = boxes[i].y; 
-			double z = boxes[i].z; 
-
-			double x_width = std::max(boxes[i].x_width,boxes[i].y_width);
-			double y_width = std::max(boxes[i].x_width,boxes[i].y_width);
-			double z_width = boxes[i].z_width;
-			
-			vector<geometry_msgs::Point> verts;
-			geometry_msgs::Point p;
-			// vertice 0
-			p.x = x-x_width / 2.; p.y = y-y_width / 2.; p.z = z-z_width / 2.;
-			verts.push_back(p);
-
-			// vertice 1
-			p.x = x-x_width / 2.; p.y = y+y_width / 2.; p.z = z-z_width / 2.;
-			verts.push_back(p);
-
-			// vertice 2
-			p.x = x+x_width / 2.; p.y = y+y_width / 2.; p.z = z-z_width / 2.;
-			verts.push_back(p);
-
-			// vertice 3
-			p.x = x+x_width / 2.; p.y = y-y_width / 2.; p.z = z-z_width / 2.;
-			verts.push_back(p);
-
-			// vertice 4
-			p.x = x-x_width / 2.; p.y = y-y_width / 2.; p.z = z+z_width / 2.;
-			verts.push_back(p);
-
-			// vertice 5
-			p.x = x-x_width / 2.; p.y = y+y_width / 2.; p.z = z+z_width / 2.;
-			verts.push_back(p);
-
-			// vertice 6
-			p.x = x+x_width / 2.; p.y = y+y_width / 2.; p.z = z+z_width / 2.;
-			verts.push_back(p);
-
-			// vertice 7
-			p.x = x+x_width / 2.; p.y = y-y_width / 2.; p.z = z+z_width / 2.;
-			verts.push_back(p);
-			
-			int vert_idx[12][2] = {
-				{0,1},
-				{1,2},
-				{2,3},
-				{0,3},
-				{0,4},
-				{1,5},
-				{3,7},
-				{2,6},
-				{4,5},
-				{5,6},
-				{4,7},
-				{6,7}
-			};
-			
-			for (size_t i=0;i<12;i++){
-				line.points.push_back(verts[vert_idx[i][0]]);
-				line.points.push_back(verts[vert_idx[i][1]]);
+		lines.markers.reserve(boxes.size());
+		for (size_t bi = 0; bi < boxes.size(); bi++) {
+			visualization_msgs::Marker line;
+			line.header.frame_id = "map";
+			line.header.stamp = ros::Time::now();
+			line.type = visualization_msgs::Marker::LINE_LIST;
+			line.action = visualization_msgs::Marker::ADD;
+			line.ns = (color=='g') ? "raw_box3D" : (color=='r') ? "fused_box3D" : "dynamic_box3D";
+			line.id = static_cast<int>(bi);
+			line.scale.x = 0.05;
+			line.color.a = 1.0;
+			if (color=='g') {
+				line.color.g = 1.0;
+			} else if (color=='b') {
+				line.color.b = 1.0;
+			} else {
+				line.color.r = 1.0;
 			}
-			
+			line.lifetime = ros::Duration(0.2);
+			line.points.clear();
+
+			double x = boxes[bi].x;
+			double y = boxes[bi].y;
+			double z = boxes[bi].z;
+
+			double x_width = std::max(boxes[bi].x_width, boxes[bi].y_width);
+			double y_width = std::max(boxes[bi].x_width, boxes[bi].y_width);
+			double z_width = boxes[bi].z_width;
+
+			std::vector<geometry_msgs::Point> verts;
+			verts.reserve(8);
+			geometry_msgs::Point p;
+			p.x = x - x_width / 2.; p.y = y - y_width / 2.; p.z = z - z_width / 2.; verts.push_back(p);
+			p.x = x - x_width / 2.; p.y = y + y_width / 2.; p.z = z - z_width / 2.; verts.push_back(p);
+			p.x = x + x_width / 2.; p.y = y + y_width / 2.; p.z = z - z_width / 2.; verts.push_back(p);
+			p.x = x + x_width / 2.; p.y = y - y_width / 2.; p.z = z - z_width / 2.; verts.push_back(p);
+			p.x = x - x_width / 2.; p.y = y - y_width / 2.; p.z = z + z_width / 2.; verts.push_back(p);
+			p.x = x - x_width / 2.; p.y = y + y_width / 2.; p.z = z + z_width / 2.; verts.push_back(p);
+			p.x = x + x_width / 2.; p.y = y + y_width / 2.; p.z = z + z_width / 2.; verts.push_back(p);
+			p.x = x + x_width / 2.; p.y = y - y_width / 2.; p.z = z + z_width / 2.; verts.push_back(p);
+
+			int vert_idx[12][2] = {
+				{0,1},{1,2},{2,3},{0,3},
+				{0,4},{1,5},{3,7},{2,6},
+				{4,5},{5,6},{4,7},{6,7}
+			};
+			for (size_t ei = 0; ei < 12; ei++) {
+				line.points.push_back(verts[vert_idx[ei][0]]);
+				line.points.push_back(verts[vert_idx[ei][1]]);
+			}
+
 			lines.markers.push_back(line);
-			
-			line.id++;
 		}
-		// publish
 		publisher.publish(lines);
 	}
 
 
 	void dynamicMap::publishAllTraj(){
 
-		visualization_msgs::Marker line; 
-		visualization_msgs::MarkerArray lines;   
-		line.header.frame_id = "map";
-		line.type = visualization_msgs::Marker::LINE_LIST;
-		line.action = visualization_msgs::Marker::ADD;
-		line.scale.x = 0.05;
-		line.color.b = 1.0;
-		line.color.a = 1.0;
-		line.lifetime = ros::Duration(0.1);
+		visualization_msgs::MarkerArray lines;
+		for (size_t oi = 0; oi < this->dynamicObjs_.size(); oi++) {
+			visualization_msgs::Marker line;
+			line.header.frame_id = "map";
+			line.header.stamp = ros::Time::now();
+			line.type = visualization_msgs::Marker::LINE_LIST;
+			line.action = visualization_msgs::Marker::ADD;
+			line.ns = "all_traj";
+			line.id = static_cast<int>(oi);
+			line.scale.x = 0.05;
+			line.color.b = 1.0;
+			line.color.a = 1.0;
+			line.lifetime = ros::Duration(0.2);
+			line.points.clear();
 
-		for (size_t i=0 ; i<this->dynamicObjs_.size() ; i++) {
-			// Line list is 
-			
-			for (size_t j=0 ; j<this->trajs_[i].size() ; j++) {
-				if (this->endPoints_[i][j]<this->t_/this->ts_-3) { // don't show collision trajs
+			for (size_t tj = 0; tj < this->trajs_[oi].size(); tj++) {
+				if (this->endPoints_[oi][tj] < this->t_ / this->ts_ - 3) {
 					continue;
 				}
-				if (this->trajs_[i][j].size()<=1) {
+				if (this->trajs_[oi][tj].size() <= 1) {
 					continue;
 				}
-				for (size_t k=0; k<this->trajs_[i][j].size()-2 ; k++) {
-					line.points.push_back(this->trajs_[i][j][k]);
-					line.points.push_back(this->trajs_[i][j][k+1]);
-				}  
+				for (size_t k = 0; k + 1 < this->trajs_[oi][tj].size(); k++) {
+					line.points.push_back(this->trajs_[oi][tj][k]);
+					line.points.push_back(this->trajs_[oi][tj][k + 1]);
+				}
 			}
-			  
-			lines.markers.push_back(line);
-			line.id++;
+
+			if (!line.points.empty()) {
+				lines.markers.push_back(line);
+			}
 		}
 		this->obstacleTrajPub_.publish(lines);
 	}
 
 
 	void dynamicMap::publishBestTraj(){
-		visualization_msgs::Marker line; 
-		visualization_msgs::MarkerArray lines;   
-		line.header.frame_id = "map";
-		line.type = visualization_msgs::Marker::LINE_LIST;
-		line.action = visualization_msgs::Marker::ADD;
-		   
-		line.scale.x = 0.05;
-		
-		line.color.g = 1.0;
-		line.color.a = 1.0;
-		line.lifetime = ros::Duration(0.1);
-		for (size_t i=0 ; i<this->dynamicObjs_.size() ; i++) {
-			// Line list is 
-			if (this->bestTrajs_[i].size()<=1) {
-				continue;  
-			}   
-			for (size_t k=0; k<this->bestTrajs_[i].size()-1 ; k++) {
-				line.points.push_back(this->bestTrajs_[i][k]);
-				line.points.push_back(this->bestTrajs_[i][k+1]);
+		visualization_msgs::MarkerArray lines;
+		for (size_t oi = 0; oi < this->dynamicObjs_.size(); oi++) {
+			if (this->bestTrajs_[oi].size() <= 1) {
+				continue;
 			}
-			
-			lines.markers.push_back(line); 
-			line.id++;
+			visualization_msgs::Marker line;
+			line.header.frame_id = "map";
+			line.header.stamp = ros::Time::now();
+			line.type = visualization_msgs::Marker::LINE_LIST;
+			line.action = visualization_msgs::Marker::ADD;
+			line.ns = "best_traj";
+			line.id = static_cast<int>(oi);
+			line.scale.x = 0.06;
+			line.color.g = 1.0;
+			line.color.a = 1.0;
+			line.lifetime = ros::Duration(0.2);
+			line.points.clear();
+			for (size_t k = 0; k + 1 < this->bestTrajs_[oi].size(); k++) {
+				line.points.push_back(this->bestTrajs_[oi][k]);
+				line.points.push_back(this->bestTrajs_[oi][k + 1]);
+			}
+			lines.markers.push_back(line);
 		}
 		this->obstacleTrajPub_.publish(lines);
 	}

@@ -1,0 +1,25 @@
+<launch>
+  <arg name="real_topic" default="/dynamic_map/dynamic_pos" />
+  <arg name="output_topic" default="/dynamic_map/target_pos" />
+  <arg name="map_frame" default="map" />
+
+  <!-- If no real dynamic target is detected, publish a slow fake target. -->
+  <arg name="real_timeout" default="1.0" />
+  <arg name="pub_rate_hz" default="10.0" />
+  <arg name="fake_center_x" default="5.0" />
+  <arg name="fake_center_y" default="0.0" />
+  <arg name="fake_radius" default="2.0" />
+  <arg name="fake_omega" default="0.15" />
+
+  <node pkg="target_follower" type="target_pos_mux.py" name="target_pos_mux" output="screen">
+    <param name="real_topic" value="$(arg real_topic)" />
+    <param name="output_topic" value="$(arg output_topic)" />
+    <param name="map_frame" value="$(arg map_frame)" />
+    <param name="real_timeout" value="$(arg real_timeout)" />
+    <param name="pub_rate_hz" value="$(arg pub_rate_hz)" />
+    <param name="fake_center_x" value="$(arg fake_center_x)" />
+    <param name="fake_center_y" value="$(arg fake_center_y)" />
+    <param name="fake_radius" value="$(arg fake_radius)" />
+    <param name="fake_omega" value="$(arg fake_omega)" />
+  </node>
+</launch>

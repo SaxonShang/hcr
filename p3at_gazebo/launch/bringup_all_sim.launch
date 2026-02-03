@@ -9,6 +9,9 @@
 
   <include file="$(find p3at_navigation)/launch/move_base.launch" />
 
+  <!-- Provide a stable target topic for the follower even if no real dynamic target is detected. -->
+  <include file="$(find target_follower)/launch/target_pos_mux.launch" />
+
   <include file="$(find target_follower)/launch/follow_target.launch" />
 
   <group if="$(arg use_rviz)">

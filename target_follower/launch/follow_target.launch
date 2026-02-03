@@ -1,5 +1,6 @@
 <launch>
-  <arg name="target_topic" default="/dynamic_map/dynamic_pos" />
+  <!-- Subscribe to the muxed target topic (real target if available, otherwise a fake target). -->
+  <arg name="target_topic" default="/dynamic_map/target_pos" />
   <arg name="map_frame" default="map" />
   <arg name="base_frame" default="base_link" />
   <arg name="follow_distance" default="1.5" />

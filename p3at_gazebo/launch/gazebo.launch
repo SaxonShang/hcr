@@ -3,7 +3,8 @@
   <arg name="use_sim_time" default="true"/>
   <arg name="gui" default="true"/>
   <arg name="headless" default="false"/>
-  <arg name="world_name" default="$(find gazebo_ros)/worlds/empty.world"/>
+  <!-- Default to a demo world that contains a few obstacles. -->
+  <arg name="world_name" default="$(find p3at_gazebo)/worlds/hcr_demo.world"/>
 
   <include file="$(find gazebo_ros)/launch/empty_world.launch">
     <arg name="world_name" value="$(arg world_name)"/>
