@@ -1,0 +1,20 @@
+<launch>
+  <arg name="x" default="0.0" />
+  <arg name="y" default="0.0" />
+  <arg name="z" default="0.1" />
+  <arg name="yaw" default="0.0" />
+
+  <param name="robot_description"
+         command="$(find xacro)/xacro '$(find p3at_gazebo)/urdf/p3at.urdf.xacro'" />
+
+  <node pkg="gazebo_ros" type="spawn_model" name="spawn_p3at"
+        args="-urdf -param robot_description -model p3at -x $(arg x) -y $(arg y) -z $(arg z) -Y $(arg yaw)"
+        output="screen" />
+
+  <node pkg="robot_state_publisher" type="robot_state_publisher" name="robot_state_publisher" output="screen">
+    <param name="publish_frequency" value="50.0" />
+  </node>
+
+  <!-- Joint state publisher is optional. Gazebo drive plugins may publish joint states already. -->
+  <node pkg="joint_state_publisher" type="joint_state_publisher" name="joint_state_publisher" output="screen" />
+</launch>

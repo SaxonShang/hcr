@@ -1,0 +1,24 @@
+<launch>
+  <arg name="map_frame" default="map" />
+  <arg name="odom_frame" default="odom" />
+  <arg name="base_frame" default="base_link" />
+
+  <!-- If you do not run AMCL or SLAM yet, publish an identity map->odom -->
+  <node pkg="tf2_ros" type="static_transform_publisher" name="map_to_odom"
+        args="0 0 0 0 0 0 $(arg map_frame) $(arg odom_frame)" />
+
+  <node pkg="move_base" type="move_base" name="move_base" output="screen" clear_params="true">
+    <param name="base_global_planner" value="navfn/NavfnROS" />
+    <param name="base_local_planner" value="dwa_local_planner/DWAPlannerROS" />
+
+    <rosparam file="$(find p3at_navigation)/config/costmap_common.yaml" command="load" />
+    <rosparam file="$(find p3at_navigation)/config/global_costmap.yaml" command="load" />
+    <rosparam file="$(find p3at_navigation)/config/local_costmap.yaml" command="load" />
+    <rosparam file="$(find p3at_navigation)/config/dwa_local_planner.yaml" command="load" />
+
+    <param name="global_costmap/global_frame" value="$(arg map_frame)" />
+    <param name="global_costmap/robot_base_frame" value="$(arg base_frame)" />
+    <param name="local_costmap/global_frame" value="$(arg odom_frame)" />
+    <param name="local_costmap/robot_base_frame" value="$(arg base_frame)" />
+  </node>
+</launch>

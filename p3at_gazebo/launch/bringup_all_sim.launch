@@ -1,0 +1,16 @@
+<launch>
+  <arg name="use_rviz" default="true" />
+
+  <include file="$(find p3at_gazebo)/launch/bringup_sim.launch" />
+
+  <!-- map_manager should already be in your workspace -->
+  <include file="$(find map_manager)/launch/dynamic_map.launch" />
+
+  <include file="$(find p3at_navigation)/launch/move_base.launch" />
+
+  <include file="$(find target_follower)/launch/follow_target.launch" />
+
+  <group if="$(arg use_rviz)">
+    <node pkg="rviz" type="rviz" name="rviz" output="screen"/>
+  </group>
+</launch>

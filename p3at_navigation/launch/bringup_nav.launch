@@ -1,0 +1,11 @@
+<launch>
+  <arg name="use_rviz" default="true" />
+  <arg name="rviz_config" default="" />
+
+  <include file="$(find p3at_navigation)/launch/move_base.launch" />
+
+  <group if="$(arg use_rviz)">
+    <node pkg="rviz" type="rviz" name="rviz"
+          args="$(eval '-d ' + rviz_config if rviz_config else '')" />
+  </group>
+</launch>

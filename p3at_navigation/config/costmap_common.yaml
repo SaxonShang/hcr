@@ -1,0 +1,19 @@
+# Shared costmap parameters for both global and local costmaps
+robot_radius: 0.30
+inflation_radius: 0.55
+
+transform_tolerance: 0.2
+obstacle_range: 5.0
+raytrace_range: 6.0
+
+# Use the PointCloud2 from map_manager as the obstacle source
+observation_sources: dynamic_map_cloud
+
+dynamic_map_cloud:
+  data_type: PointCloud2
+  topic: /dynamic_map/inflated_voxel_map
+  marking: true
+  clearing: false
+  min_obstacle_height: 0.05
+  max_obstacle_height: 2.0
+  expected_update_rate: 0.0

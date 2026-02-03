@@ -1,0 +1,26 @@
+<?xml version="1.0"?>
+<package format="2">
+  <name>p3at_gazebo</name>
+  <version>0.1.0</version>
+  <description>Gazebo simulation bringup for a Pioneer 3-AT style skid-steer robot with an RGB-D camera.</description>
+
+  <maintainer email="ss4822@ic.ac.uk">sax</maintainer>
+  <license>MIT</license>
+
+  <buildtool_depend>catkin</buildtool_depend>
+
+  <depend>roscpp</depend>
+  <depend>rospy</depend>
+  <depend>tf</depend>
+  <depend>tf2_ros</depend>
+  <depend>robot_state_publisher</depend>
+  <depend>joint_state_publisher</depend>
+  <depend>xacro</depend>
+
+  <depend>gazebo_ros</depend>
+  <depend>gazebo_plugins</depend>
+
+  <export>
+    <gazebo_ros gazebo_model_path="${prefix}" />
+  </export>
+</package>
