@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 # toplevel CMakeLists.txt for a catkin workspace
 # catkin/cmake/toplevel.cmake
 
@@ -67,3 +68,6 @@ else()
 endif()
 
 catkin_workspace()
+=======
+/opt/ros/noetic/share/catkin/cmake/toplevel.cmake
+>>>>>>> 142185303866b7bf0185db9a10a6a643df80c3de
