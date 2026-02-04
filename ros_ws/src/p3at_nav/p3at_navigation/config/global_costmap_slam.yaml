@@ -1,0 +1,40 @@
+global_costmap:
+  global_frame: map
+  robot_base_frame: base_link
+  update_frequency: 3.0
+  publish_frequency: 1.0
+  transform_tolerance: 0.5
+
+  # Use the SLAM map as the static layer.
+  static_map: true
+  rolling_window: false
+
+  plugins:
+    - {name: static_layer, type: "costmap_2d::StaticLayer"}
+    - {name: obstacle_layer, type: "costmap_2d::ObstacleLayer"}
+    - {name: inflation_layer, type: "costmap_2d::InflationLayer"}
+
+  static_layer:
+    map_topic: /map
+
+  obstacle_layer:
+    # Optional dynamic obstacles on the global costmap.
+    observation_sources: scan dynamic_map_cloud
+    scan:
+      data_type: LaserScan
+      topic: /scan
+      marking: true
+      clearing: true
+      inf_is_valid: true
+      min_obstacle_height: 0.05
+      max_obstacle_height: 2.0
+    dynamic_map_cloud:
+      data_type: PointCloud2
+      topic: /dynamic_map/inflated_voxel_map
+      marking: true
+      clearing: false
+      min_obstacle_height: 0.05
+      max_obstacle_height: 2.0
+
+  inflation_layer:
+    inflation_radius: 0.55

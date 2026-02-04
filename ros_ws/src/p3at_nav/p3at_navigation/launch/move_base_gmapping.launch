@@ -1,0 +1,30 @@
+<launch>
+  <arg name="map_frame" default="map" />
+  <arg name="odom_frame" default="odom" />
+  <arg name="base_frame" default="base_link" />
+
+  <!-- Robot namespace and odom/cmd topics from p3at_sim -->
+  <arg name="cmd_vel_topic" default="/sim_p3at/cmd_vel" />
+  <arg name="odom_topic" default="/sim_p3at/odom" />
+
+  <node pkg="move_base" type="move_base" name="move_base" output="screen" clear_params="true">
+    <param name="base_global_planner" value="navfn/NavfnROS" />
+    <param name="base_local_planner" value="dwa_local_planner/DWAPlannerROS" />
+
+    <rosparam file="$(find p3at_navigation)/config/costmap_common_slam.yaml" command="load" />
+    <rosparam file="$(find p3at_navigation)/config/global_costmap_slam.yaml" command="load" />
+    <rosparam file="$(find p3at_navigation)/config/local_costmap_slam.yaml" command="load" />
+    <rosparam file="$(find p3at_navigation)/config/dwa_local_planner.yaml" command="load" />
+
+    <param name="global_costmap/global_frame" value="$(arg map_frame)" />
+    <param name="global_costmap/robot_base_frame" value="$(arg base_frame)" />
+    <param name="local_costmap/global_frame" value="$(arg odom_frame)" />
+    <param name="local_costmap/robot_base_frame" value="$(arg base_frame)" />
+
+    <!-- Make sure the local planner reads the correct odom topic -->
+    <param name="DWAPlannerROS/odom_topic" value="$(arg odom_topic)" />
+
+    <!-- Remap cmd_vel to the Gazebo robot namespace -->
+    <remap from="cmd_vel" to="$(arg cmd_vel_topic)" />
+  </node>
+</launch>

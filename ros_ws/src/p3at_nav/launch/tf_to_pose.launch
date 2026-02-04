@@ -1,0 +1,12 @@
+<?xml version="1.0"?>
+<launch>
+  <arg name="map_frame" default="map" />
+  <arg name="base_frame" default="base_link" />
+  <arg name="out_topic" default="/robot/pose" />
+
+  <node pkg="p3at_nav" type="tf_to_pose.py" name="tf_to_pose" output="screen">
+    <param name="map_frame" value="$(arg map_frame)" />
+    <param name="base_frame" value="$(arg base_frame)" />
+    <param name="out_topic" value="$(arg out_topic)" />
+  </node>
+</launch>

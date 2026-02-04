@@ -1,0 +1,30 @@
+# Costmap settings for running navigation together with SLAM (slam_gmapping).
+# Global planning uses the GMapping /map. Local obstacle avoidance uses /scan plus map_manager's PointCloud2.
+
+# Use a conservative radius for Pioneer 3-AT.
+robot_radius: 0.30
+inflation_radius: 0.55
+
+transform_tolerance: 0.3
+obstacle_range: 5.0
+raytrace_range: 6.0
+
+observation_sources: scan dynamic_map_cloud
+
+scan:
+  data_type: LaserScan
+  topic: /scan
+  marking: true
+  clearing: true
+  inf_is_valid: true
+  # LaserScan from depth may include ground noise. Keep a small height window.
+  min_obstacle_height: 0.05
+  max_obstacle_height: 2.0
+
+dynamic_map_cloud:
+  data_type: PointCloud2
+  topic: /dynamic_map/inflated_voxel_map
+  marking: true
+  clearing: false
+  min_obstacle_height: 0.05
+  max_obstacle_height: 2.0

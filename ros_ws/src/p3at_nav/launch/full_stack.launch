@@ -1,0 +1,64 @@
+<?xml version="1.0"?>
+<launch>
+  <!-- Full simulation stack:
+       Gazebo + depth->scan + GMapping + map_manager + move_base + target follower.
+  -->
+
+  <arg name="use_rviz" default="true" />
+  <arg name="use_moving_target" default="false" />
+  <arg name="use_fake_target" default="true" />
+
+  <!-- Depth topic produced by p3at_sim's Gazebo depth camera plugin -->
+  <arg name="depth_topic" default="/sim_p3at/camera/depth/depth/image_raw" />
+
+  <!-- 1) Gazebo simulation (includes the depth camera) -->
+  <include file="$(find p3at_sim)/launch/bringup_depth.launch" />
+
+  <!-- Optional: drive the red target_box in a circle -->
+  <include file="$(find p3at_sim)/launch/move_target_box.launch" if="$(arg use_moving_target)" />
+
+  <!-- 2) Depth image -> LaserScan (/scan) -->
+  <include file="$(find p3at_nav)/launch/depth_to_scan.launch" />
+
+  <!-- 3) SLAM (GMapping) -->
+  <include file="$(find p3at_nav)/launch/gmapping_slam.launch">
+    <arg name="scan_topic" value="/scan" />
+    <arg name="use_rviz" value="false" />
+  </include>
+
+  <!-- 4) Publish robot pose as PoseStamped in the map frame -->
+  <include file="$(find p3at_nav)/launch/tf_to_pose.launch">
+    <arg name="out_topic" value="/robot/pose" />
+  </include>
+
+  <!-- 5) map_manager: 3D voxel map + dynamic obstacle tracking -->
+  <include file="$(find map_manager)/launch/dynamic_map.launch">
+    <arg name="localization_mode" value="0" />
+    <arg name="depth_topic" value="$(arg depth_topic)" />
+    <arg name="pose_topic" value="/robot/pose" />
+    <!-- odom_topic is ignored when localization_mode=0 -->
+    <arg name="odom_topic" value="/sim_p3at/odom" />
+  </include>
+
+  <!-- 6) Navigation: move_base configured to use /map (from GMapping) and /scan + /dynamic_map/inflated_voxel_map -->
+  <include file="$(find p3at_navigation)/launch/move_base_gmapping.launch" />
+
+  <!-- 7) Target follower (optional).
+       - If use_fake_target=true, target_pos_mux publishes a slow moving target even if no dynamic box is detected.
+       - The follower always listens to /dynamic_map/target_pos.
+  -->
+  <node pkg="target_follower" type="target_pos_mux.py" name="target_pos_mux" output="screen" if="$(arg use_fake_target)">
+    <param name="real_topic" value="/dynamic_map/dynamic_pos" />
+    <param name="output_topic" value="/dynamic_map/target_pos" />
+    <param name="map_frame" value="map" />
+  </node>
+
+  <node pkg="target_follower" type="follow_target.py" name="follow_target" output="screen">
+    <param name="target_topic" value="/dynamic_map/target_pos" />
+  </node>
+
+  <!-- 8) RViz -->
+  <node pkg="rviz" type="rviz" name="rviz_full_stack"
+        args="-d $(find p3at_nav)/rviz/hcr_integration.rviz"
+        if="$(arg use_rviz)" />
+</launch>
