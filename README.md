@@ -12,22 +12,22 @@ ROS Noetic workspace for P3AT mobile robot simulation, SLAM mapping, and navigat
 ELEC70015_Human-Centered-Robotics-2026_Imperial/
 ├── ros_ws/                           # ROS workspace
 │   ├── src/
-│   │   ├── p3at_sim/                 # Gazebo robot + RGB-D sensor
+│   │   ├── p3at_sim/                 # Gazebo robot + RGB-D sensor (ROS package)
 │   │   ├── p3at_nav/                 # SLAM bring-up + glue utilities (ROS package)
 │   │   │   ├── config/
 │   │   │   ├── launch/               # depth_to_scan, gmapping_slam, tf_to_pose, full_stack
 │   │   │   ├── maps/
 │   │   │   ├── rviz/
-│   │   │   ├── scripts/
-│   │   │   ├── hcr_msgs/             # custom messages (separate ROS package, nested)
-│   │   │   │   └── msg/
-│   │   │   ├── p3at_navigation/      # move_base configs (separate ROS package, nested)
-│   │   │   │   ├── config/
-│   │   │   │   └── launch/
-│   │   │   └── target_follower/      # goal pursuit (separate ROS package, nested)
-│   │   │       ├── launch/
-│   │   │       └── scripts/
-│   │   ├── map_manager/              # 3D voxel mapping + dynamic obstacle tracking
+│   │   │   └── scripts/
+│   │   ├── hcr_msgs/                 # custom messages (ROS package)
+│   │   │   └── msg/
+│   │   ├── p3at_navigation/          # move_base configs (ROS package)
+│   │   │   ├── config/
+│   │   │   └── launch/
+│   │   ├── target_follower/          # goal pursuit (ROS package)
+│   │   │   ├── launch/
+│   │   │   └── scripts/
+│   │   ├── map_manager/              # 3D voxel mapping + dynamic obstacle tracking (ROS package)
 │   │   ├── amr-ros-config/           # AMR configuration (git submodule)
 │   │   └── gazebo_ros_pkgs/          # Gazebo-ROS interface (local, ignored by git)
 │   ├── build/                        # Build artifacts (ignored)
@@ -35,6 +35,7 @@ ELEC70015_Human-Centered-Robotics-2026_Imperial/
 ├── tools/                            # Utility scripts
 └── README.md
 ```
+
 
 ---
 
@@ -249,7 +250,7 @@ P3AT mobile robot in Gazebo with depth camera.
 - No physical LiDAR - `/scan` is generated from depth camera conversion
 
 ### `p3at_nav` - Navigation, Perception & SLAM
-Depth-to-laserscan conversion and GMapping SLAM for 2D mapping and navigation.
+Depth-to-laserscan conversion and GMapping SLAM for 2D mapping and navigation. This package also provides integrated launch files to start SLAM, navigation, mapping, and target following.
 
 **Key Files:**
 - `launch/depth_to_scan.launch` - Depth camera to laser scan conversion
@@ -284,6 +285,38 @@ GMapping SLAM (slam_gmapping node)
 - Particles: 30
 - Update thresholds: 0.2m linear, 0.2 rad angular
 - Output frame: `base_link` (corrected from `camera_depth_optical_frame`)
+
+
+### `hcr_msgs` - Custom Messages
+Custom message definitions used by target selection and tracking.
+
+**Messages:**
+- `TargetCandidate.msg`
+- `TargetCandidateArray.msg`
+
+### `p3at_navigation` - move_base Configuration
+Navigation configuration for `move_base` (global and local costmaps, planners, and launch files).
+
+**Key Files:**
+- `config/` - costmap and planner YAMLs
+- `launch/` - navigation bring-up launch files
+
+### `target_follower` - Target Pursuit
+Target following and goal publication utilities for pursuing detected targets.
+
+**Key Files:**
+- `scripts/follow_target.py` - follows a selected target
+- `scripts/target_pos_mux.py` - multiplexes target sources into a single topic
+- `launch/` - bring-up launch files
+
+### `map_manager` - 3D Mapping and Dynamic Obstacle Tracking
+3D voxel mapping and dynamic obstacle tracking using depth data and robot pose.
+
+**Key Files:**
+- `src/dynamic_map_node.cpp` - main node
+- `srv/CheckCollision.srv` - collision checking service
+- `srv/RandomSample.srv` - sampling service
+- `launch/` and `rviz/` - runtime configuration
 
 ### `amr-ros-config` (Submodule)
 MobileRobots AMR configuration files.
@@ -988,7 +1021,7 @@ plt.show()
 ## Git Workflow
 
 ### What's Tracked
-- Source packages: `p3at_sim/`, `p3at_nav/`
+- Source packages: `p3at_sim/`, `p3at_nav/`, `hcr_msgs/`, `p3at_navigation/`, `target_follower/`, `map_manager/`
 - Launch files, URDF, RViz configs
 - SLAM configurations: `config/`, `rviz/`
 - Map saving script: `scripts/save_map.sh`
