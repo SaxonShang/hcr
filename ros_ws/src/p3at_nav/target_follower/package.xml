@@ -17,5 +17,7 @@
   <depend>actionlib</depend>
   <depend>move_base_msgs</depend>
 
-  <export></export>
+    <depend>hcr_msgs</depend>
+
+<export></export>
 </package>

@@ -19,6 +19,8 @@ ELEC70015_Human-Centered-Robotics-2026_Imperial/
 │   │   │   ├── maps/
 │   │   │   ├── rviz/
 │   │   │   ├── scripts/
+│   │   │   ├── hcr_msgs/             # custom messages (separate ROS package, nested)
+│   │   │   │   └── msg/
 │   │   │   ├── p3at_navigation/      # move_base configs (separate ROS package, nested)
 │   │   │   │   ├── config/
 │   │   │   │   └── launch/

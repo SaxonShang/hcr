@@ -8,6 +8,7 @@ catkin_package()
 catkin_install_python(PROGRAMS
   scripts/follow_target.py
   scripts/target_pos_mux.py
+  scripts/target_candidate_selector.py
   DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
 )
 
