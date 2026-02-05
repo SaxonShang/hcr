@@ -11,10 +11,16 @@
     In practice, camera_info can be 0 Hz or not time-aligned with the depth image.
     depthimage_to_laserscan relies on synchronized Image and CameraInfo, so we publish
     a synthetic camera_info topic whose header.stamp exactly matches the depth image.
+
+    IMPORTANT FOR GMAPPING:
+    slam_gmapping expects the LaserScan frame to be planar (Z axis up or down).
+    Camera optical frames are not planar, so we publish the scan in a planar frame
+    (base_scan) and provide a static TF for it.
   -->
 
   <!-- Use the true depth image (32FC1/16UC1). image_rect_raw is often rgb8. -->
   <arg name="depth_image_topic" default="/sim_p3at/camera/depth/depth/image_raw" />
+
   <!--
     IMPORTANT:
     depthimage_to_laserscan subscribes via image_transport::CameraSubscriber.
@@ -24,13 +30,27 @@
     time-aligned CameraInfo directly onto that expected topic.
   -->
   <arg name="camera_info_sync_topic" default="/sim_p3at/camera/depth/depth/camera_info" />
+
+  <!-- Camera optical frame from the URDF -->
   <arg name="camera_frame" default="camera_depth_optical_frame" />
+
+  <!-- Planar scan frame to satisfy gmapping -->
+  <arg name="scan_frame" default="base_scan" />
+
   <arg name="scan_topic" default="/scan" />
 
   <!-- Match the URDF camera settings -->
   <arg name="width" default="640" />
   <arg name="height" default="480" />
   <arg name="horizontal_fov" default="1.211" />
+
+  <!--
+    Provide a planar scan frame:
+    Translation should match the camera mount position in the URDF.
+    Rotation is zero to keep the frame planar.
+  -->
+  <node pkg="tf2_ros" type="static_transform_publisher" name="base_to_base_scan"
+        args="0.25 0 0.45 0 0 0 base_link $(arg scan_frame)" />
 
   <!-- 1) Publish a synthetic, time-aligned CameraInfo -->
   <node pkg="p3at_nav" type="camera_info_from_image_stamp.py" name="camera_info_from_image_stamp" output="screen">
@@ -48,8 +68,9 @@
     <remap from="camera_info" to="$(arg camera_info_sync_topic)" />
     <remap from="scan" to="$(arg scan_topic)" />
 
-    <!-- Keep the scan frame as the camera optical frame. Costmaps and gmapping will TF it. -->
-    <param name="output_frame_id" value="$(arg camera_frame)" />
+    <!-- Publish the scan in a planar frame for gmapping -->
+    <param name="output_frame_id" value="$(arg scan_frame)" />
+
     <param name="scan_time" value="0.033" />
     <param name="range_min" value="0.2" />
     <param name="range_max" value="10.0" />
