@@ -75,7 +75,7 @@ Visualization Manager:
     - Class: rviz/Image
       Name: Depth Camera
       Enabled: true
-      Topic: /sim_p3at/camera/depth/depth/image_raw
+      Topic: /sim_p3at/camera/depth/image_rect_raw
       Transport Hint: raw
       Queue Size: 2
       Unreliable: false

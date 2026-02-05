@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """
-Relay RGB camera_info to depth camera_info topic.
-Workaround for libgazebo_ros_openni_kinect.so not publishing depth/camera_info.
+Relay RGB camera_info to a depth camera_info topic.
+Legacy workaround if the depth camera_info is missing.
 """
 import rospy
 from sensor_msgs.msg import CameraInfo
@@ -12,7 +12,7 @@ class CameraInfoRelay:
         
         # Subscribe to RGB camera_info
         self.sub = rospy.Subscriber(
-            '/sim_p3at/depth_camera/rgb/camera_info',
+            '/sim_p3at/camera/color/camera_info',
             CameraInfo,
             self.callback,
             queue_size=10
@@ -20,7 +20,7 @@ class CameraInfoRelay:
         
         # Publish to depth camera_info
         self.pub = rospy.Publisher(
-            '/sim_p3at/depth_camera/depth/camera_info',
+            '/sim_p3at/camera/depth/camera_info_sync',
             CameraInfo,
             queue_size=10
         )

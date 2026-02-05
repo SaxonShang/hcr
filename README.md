@@ -105,6 +105,7 @@ sudo apt install ros-noetic-desktop-full \
                  ros-noetic-gmapping \
                  ros-noetic-amcl \
                  ros-noetic-depthimage-to-laserscan \
+                 ros-noetic-realsense2-description \
                  ros-noetic-urdf \
                  ros-noetic-xacro \
                  ros-noetic-robot-state-publisher \
@@ -233,6 +234,36 @@ rosrun map_server map_saver -f ~/ELEC70015_Human-Centered-Robotics-2026_Imperial
 
 ---
 
+### Option 3: Full Stack (SLAM + Navigation + Target Following)
+
+This starts Gazebo, depth-to-scan, GMapping, map_manager, move_base, and target_follower.
+
+#### A) Dummy target (always available)
+```bash
+source /opt/ros/noetic/setup.zsh  # or setup.bash
+source ~/ELEC70015_Human-Centered-Robotics-2026_Imperial/ros_ws/devel/setup.zsh
+roslaunch p3at_nav full_stack.launch use_rviz:=true use_fake_target:=true
+```
+
+#### B) Simulated YOLO candidates (matches real integration)
+This publishes `hcr_msgs/TargetCandidateArray` on `/targets/candidates` from the Gazebo `target_box` model,
+selects a target, and feeds it into the follower.
+
+```bash
+source /opt/ros/noetic/setup.zsh
+source ~/ELEC70015_Human-Centered-Robotics-2026_Imperial/ros_ws/devel/setup.zsh
+roslaunch p3at_nav full_stack.launch use_mock_yolo:=true use_fake_target:=false use_rviz:=true
+```
+
+In the real project, replace the mock publisher with your YOLO node. The expected interface is:
+`/targets/candidates` of type `hcr_msgs/TargetCandidateArray`.
+
+### Notes on cmd_vel and odom topics
+
+`p3at_sim` publishes odometry on `/sim_p3at/odom` and expects velocity commands on `/sim_p3at/cmd_vel`.
+
+The `p3at_navigation` launch files in this repo already remap `move_base` to these topics by default, so you do not need to run any `topic_tools relay` commands.
+
 ## Packages Overview
 
 ### `p3at_sim` - Robot Simulation
@@ -256,7 +287,7 @@ Depth-to-laserscan conversion and GMapping SLAM for 2D mapping and navigation. T
 - `launch/depth_to_scan.launch` - Depth camera to laser scan conversion
 - `launch/gmapping_slam.launch` - GMapping SLAM with RViz visualization
 - `config/gmapping_params.yaml` - SLAM algorithm parameters
-- `scripts/depth_camera_info_from_image.py` - Camera info generator
+- `scripts/camera_info_from_image_stamp.py` - Synthetic camera_info publisher (time-aligned)
 - `scripts/save_map.sh` - Map saving utility script
 - `rviz/depth_scan.rviz` - Depth visualization config
 - `rviz/slam.rviz` - SLAM visualization config
@@ -266,11 +297,13 @@ Depth-to-laserscan conversion and GMapping SLAM for 2D mapping and navigation. T
 ```
 Gazebo Depth Camera
         ↓
-/sim_p3at/camera/depth/image_raw
+/sim_p3at/camera/depth/image_rect_raw
         ↓
-depth_camera_info_generator
+camera_info_from_image_stamp
         ↓
-depthimage_to_laserscan (output_frame_id: base_link)
+/sim_p3at/camera/depth/camera_info_sync
+        ↓
+depthimage_to_laserscan (output_frame_id: camera_depth_optical_frame)
         ↓
 /scan (sensor_msgs/LaserScan)
         ↓
@@ -284,7 +317,7 @@ GMapping SLAM (slam_gmapping node)
 - Sensor range: 0-10m
 - Particles: 30
 - Update thresholds: 0.2m linear, 0.2 rad angular
-- Output frame: `base_link` (corrected from `camera_depth_optical_frame`)
+- Base frame: `base_link`
 
 
 ### `hcr_msgs` - Custom Messages
@@ -307,6 +340,8 @@ Target following and goal publication utilities for pursuing detected targets.
 **Key Files:**
 - `scripts/follow_target.py` - follows a selected target
 - `scripts/target_pos_mux.py` - multiplexes target sources into a single topic
+- `scripts/target_candidate_selector.py` - selects a single target from YOLO-style candidates
+- `scripts/mock_yolo_from_gazebo.py` - simulation helper that publishes YOLO-style candidates from the Gazebo target_box
 - `launch/` - bring-up launch files
 
 ### `map_manager` - 3D Mapping and Dynamic Obstacle Tracking
@@ -331,14 +366,14 @@ MobileRobots AMR configuration files.
 ```bash
 /sim_p3at/camera/color/image_raw          # RGB image (sensor_msgs/Image)
 /sim_p3at/camera/color/camera_info        # RGB camera calibration
-/sim_p3at/camera/depth/depth/image_raw    # Depth image (32FC1, 640x480)
-/sim_p3at/camera/depth/depth/camera_info  # Depth camera calibration (generated)
+/sim_p3at/camera/depth/image_rect_raw     # Depth image (32FC1, 640x480)
+/sim_p3at/camera/depth/camera_info_sync   # Depth camera calibration (synthetic, time-aligned)
 /sim_p3at/camera/depth/points             # Point cloud (sensor_msgs/PointCloud2)
 ```
 
 ### Navigation Topics
 ```bash
-/scan                                     # Virtual laser scan (converted from depth, frame_id: base_link)
+/scan                                     # Virtual laser scan (converted from depth, frame_id: camera_depth_optical_frame)
 /sim_p3at/cmd_vel                        # Velocity commands (geometry_msgs/Twist)
 /sim_p3at/odom                           # Odometry (nav_msgs/Odometry)
 ```
@@ -363,7 +398,7 @@ MobileRobots AMR configuration files.
 │  ┌─────────────────┐                                                │
 │  │   P3AT Robot    │                                                │
 │  │  ┌───────────┐  │                                                │
-│  │  │Depth Cam  │──┼──→ /sim_p3at/camera/depth/depth/image_raw     │
+│  │  │Depth Cam  │──┼──→ /sim_p3at/camera/depth/image_rect_raw      │
 │  │  │(no lidar!)│  │                                                │
 │  │  └───────────┘  │                                                │
 │  │                 │                                                │
@@ -376,24 +411,24 @@ MobileRobots AMR configuration files.
 ┌─────────────────────────────────────────────────────────────────────┐
 │                      Perception Pipeline                           │
 │                                                                     │
-│  /sim_p3at/camera/depth/depth/image_raw                            │
+│  /sim_p3at/camera/depth/image_rect_raw                             │
 │         │                                                           │
 │         ▼                                                           │
 │  ┌─────────────────────────────────┐                               │
-│  │ depth_camera_info_generator     │                               │
+│  │ camera_info_from_image_stamp     │                               │
 │  └─────────────────────────────────┘                               │
 │         │                                                           │
 │         ▼                                                           │
-│  /sim_p3at/camera/depth/depth/camera_info                          │
+│  /sim_p3at/camera/depth/camera_info_sync                           │
 │         │                                                           │
 │         ▼                                                           │
 │  ┌─────────────────────────────┐                                   │
 │  │  depthimage_to_laserscan    │                                   │
-│  │  output_frame_id: base_link │                                   │
+│  │  output_frame_id: camera_depth_optical_frame │                                   │
 │  └─────────────────────────────┘                                   │
 │         │                                                           │
 │         ▼                                                           │
-│      /scan (frame_id: base_link)                                   │
+│      /scan (frame_id: camera_depth_optical_frame)                                   │
 │                                                                     │
 └─────────────────────────────────────────────────────────────────────┘
                                     │
@@ -429,7 +464,7 @@ MobileRobots AMR configuration files.
 | `/gazebo_gui` | Gazebo graphical interface |
 | `/robot_state_publisher` | Publishes robot TF transforms |
 | `/joint_state_publisher` | Publishes joint states |
-| `/depth_camera_info_generator` | Generates synchronized camera_info |
+| `/camera_info_from_image_stamp` | Generates synchronized camera_info |
 | `/depth_to_scan` | Converts depth image to laser scan |
 | `/rosout` | ROS logging system |
 
@@ -531,7 +566,7 @@ killall -9 gzserver gzclient roscore rosmaster
 rosnode list
 
 # Expected output (basic simulation):
-# /depth_camera_info_generator
+# /camera_info_from_image_stamp
 # /depth_to_scan
 # /gazebo
 # /gazebo_gui
@@ -551,10 +586,10 @@ rosnode list
 rostopic hz /sim_p3at/camera/color/image_raw
 
 # Depth image (~30 Hz)
-rostopic hz /sim_p3at/camera/depth/depth/image_raw
+rostopic hz /sim_p3at/camera/depth/image_rect_raw
 
 # Camera info (~30 Hz, synchronized)
-rostopic hz /sim_p3at/camera/depth/depth/camera_info
+rostopic hz /sim_p3at/camera/depth/camera_info_sync
 
 # Laser scan (~30 Hz)
 rostopic hz /scan
@@ -574,7 +609,7 @@ rostopic echo /scan -n 1
 ```
 
 **Expected characteristics (after frame_id correction):**
-- `frame_id`: `base_link` (corrected from `camera_depth_optical_frame`)
+- `frame_id`: `camera_depth_optical_frame`
 - `angle_min/max`: Approximately ±0.52 rad (±30°)
 - `range_min`: 0.2m
 - `range_max`: 10.0m
@@ -708,7 +743,7 @@ rostopic info /scan
 rosnode info /depth_to_scan
 
 # Verify depth image is available
-rostopic hz /sim_p3at/camera/depth/depth/image_raw
+rostopic hz /sim_p3at/camera/depth/image_rect_raw
 ```
 
 **Note:** Even if `rosnode info /depth_to_scan` shows empty subscriptions, check `/scan` frequency:
@@ -717,8 +752,8 @@ rostopic hz /scan  # Should be ~30 Hz if working
 ```
 
 If `/scan` has no data:
-1. Verify depth camera is publishing: `rostopic hz /sim_p3at/camera/depth/depth/image_raw`
-2. Check camera_info synchronization: `rostopic hz /sim_p3at/camera/depth/depth/camera_info`
+1. Verify depth camera is publishing: `rostopic hz /sim_p3at/camera/depth/image_rect_raw`
+2. Check synthetic camera_info synchronization: `rostopic hz /sim_p3at/camera/depth/camera_info_sync`
 3. Restart the perception pipeline:
    ```bash
    roslaunch p3at_nav depth_to_scan.launch
@@ -743,10 +778,15 @@ rostopic hz /sim_p3at/odom
 
 **Common causes:**
 1. **Robot not moving:** GMapping only updates when robot moves. Use keyboard teleoperation to drive the robot.
-2. **Frame ID mismatch:** Ensure `/scan` frame_id is `base_link`, not `camera_depth_optical_frame`. This is configured in `depth_to_scan.launch`:
-   ```xml
-   <param name="output_frame_id" value="base_link"/>
+2. **Missing TF to the scan frame:** By default, `/scan` uses `frame_id: camera_depth_optical_frame` (set by `output_frame_id` in `depth_to_scan.launch`). This is OK as long as TF provides the chain `odom -> base_link -> camera_depth_optical_frame`.
+
+   Check:
+   ```bash
+   rostopic echo /scan -n 1 | grep frame_id
+   rosrun tf tf_echo odom camera_depth_optical_frame
    ```
+
+   If TF is missing on your machine, a simple workaround is to change `output_frame_id` in `ros_ws/src/p3at_nav/launch/depth_to_scan.launch` to `base_link`.
 3. **TF tree incomplete:** Check that `map → odom → base_link` transform chain exists:
    ```bash
    rosrun tf tf_echo map base_link
@@ -921,7 +961,7 @@ rotation_rpy: [-90°, 0°, -90°]      # Optical frame convention
 ### Depth-to-Scan Parameters
 
 **Configuration** (`depth_to_scan.launch`):
-- `output_frame_id`: `base_link` (corrected for SLAM compatibility)
+- `output_frame_id`: `camera_depth_optical_frame` (default). You can switch this to `base_link` if you hit TF issues.
 - `scan_height`: 10 pixels (vertical sampling)
 - `scan_time`: 0.033s (30 Hz)
 - `range_min`: 0.2m
@@ -935,7 +975,7 @@ rotation_rpy: [-90°, 0°, -90°]      # Optical frame convention
 **Topic Remapping:**
 ```xml
 <remap from="image"       to="/sim_p3at/camera/depth/image_rect_raw"/>
-<remap from="camera_info" to="/sim_p3at/camera/depth/camera_info"/>
+<remap from="camera_info" to="/sim_p3at/camera/depth/camera_info_sync"/>
 <remap from="scan"        to="/scan"/>
 ```
 
@@ -960,9 +1000,9 @@ rotation_rpy: [-90°, 0°, -90°]      # Optical frame convention
 
 **Frame ID Correction:**
 
-The original configuration had `/scan` with `frame_id: camera_depth_optical_frame`, which caused GMapping to fail because it couldn't find the transform between `odom` and `camera_depth_optical_frame`. 
+If GMapping fails, the most common cause is a missing TF from `odom` to the `/scan` frame (default is `camera_depth_optical_frame`). 
 
-**Solution:** Set `output_frame_id: base_link` in `depth_to_scan.launch` to ensure `/scan` is in the robot's base frame, allowing GMapping to properly integrate odometry and laser scan data.
+**Solution:** Make sure TF provides `odom -> base_link -> camera_depth_optical_frame`. If you still see TF errors, set `output_frame_id` to `base_link` as a workaround.
 
 ---
 
@@ -991,7 +1031,7 @@ python3 tools/relay_camera_info.py
 # Complete system check (basic simulation)
 echo "=== Nodes ===" && rosnode list
 echo "=== Scan Hz ===" && timeout 3 rostopic hz /scan
-echo "=== Depth Hz ===" && timeout 3 rostopic hz /sim_p3at/camera/depth/depth/image_raw
+echo "=== Depth Hz ===" && timeout 3 rostopic hz /sim_p3at/camera/depth/image_rect_raw
 echo "=== TF ===" && rosrun tf tf_echo base_link camera_depth_optical_frame
 
 # SLAM system check
@@ -1084,11 +1124,11 @@ Verify everything works:
 - [ ] Robot spawns in simulation (no errors in terminal)
 - [ ] All 7 core nodes running: `rosnode list`
 - [ ] Camera topics exist: `rostopic list | grep camera`
-- [ ] Depth image publishes at ~30Hz: `rostopic hz /sim_p3at/camera/depth/depth/image_raw`
-- [ ] Camera info publishes at ~30Hz: `rostopic hz /sim_p3at/camera/depth/depth/camera_info`
+- [ ] Depth image publishes at ~30Hz: `rostopic hz /sim_p3at/camera/depth/image_rect_raw`
+- [ ] Camera info publishes at ~30Hz: `rostopic hz /sim_p3at/camera/depth/camera_info_sync`
 - [ ] Perception pipeline works: `roslaunch p3at_nav depth_to_scan.launch`
 - [ ] Scan data publishes at ~30Hz: `rostopic hz /scan`
-- [ ] Scan frame_id is `base_link`: `rostopic echo /scan -n 1 | grep frame_id`
+- [ ] Scan frame_id is `camera_depth_optical_frame`: `rostopic echo /scan -n 1 | grep frame_id`
 - [ ] Scan data contains valid ranges: `rostopic echo /scan -n 1`
 - [ ] RViz displays correctly: `rviz -d src/p3at_nav/rviz/depth_scan.rviz`
 - [ ] TF tree complete (26 frames): `rosrun tf view_frames && xdg-open frames.pdf`

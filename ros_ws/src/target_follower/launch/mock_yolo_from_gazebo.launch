@@ -1,0 +1,20 @@
+<launch>
+  <arg name="model_name" default="target_box" />
+  <arg name="frame_id" default="odom" />
+  <arg name="candidates_topic" default="/targets/candidates" />
+
+  <arg name="id" default="1" />
+  <arg name="class_name" default="target_box" />
+  <arg name="confidence" default="0.9" />
+  <arg name="rate_hz" default="10.0" />
+
+  <node pkg="target_follower" type="mock_yolo_from_gazebo.py" name="mock_yolo_from_gazebo" output="screen">
+    <param name="model_name" value="$(arg model_name)" />
+    <param name="frame_id" value="$(arg frame_id)" />
+    <param name="candidates_topic" value="$(arg candidates_topic)" />
+    <param name="id" value="$(arg id)" />
+    <param name="class_name" value="$(arg class_name)" />
+    <param name="confidence" value="$(arg confidence)" />
+    <param name="rate_hz" value="$(arg rate_hz)" />
+  </node>
+</launch>

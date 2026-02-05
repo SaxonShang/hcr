@@ -3,9 +3,17 @@
   <arg name="odom_frame" default="odom" />
   <arg name="base_frame" default="base_link" />
 
+  <!-- Gazebo robot topics (p3at_sim uses robotNamespace=sim_p3at) -->
+  <arg name="cmd_vel_topic" default="/sim_p3at/cmd_vel" />
+  <arg name="odom_topic" default="/sim_p3at/odom" />
+
+  <!-- Publish a static map->odom only when you are NOT running SLAM/AMCL -->
+  <arg name="publish_static_map_to_odom" default="true" />
+
   <!-- If you do not run AMCL or SLAM yet, publish an identity map->odom -->
   <node pkg="tf2_ros" type="static_transform_publisher" name="map_to_odom"
-        args="0 0 0 0 0 0 $(arg map_frame) $(arg odom_frame)" />
+        args="0 0 0 0 0 0 $(arg map_frame) $(arg odom_frame)"
+        if="$(arg publish_static_map_to_odom)" />
 
   <node pkg="move_base" type="move_base" name="move_base" output="screen" clear_params="true">
     <param name="base_global_planner" value="navfn/NavfnROS" />
@@ -20,5 +28,14 @@
     <param name="global_costmap/robot_base_frame" value="$(arg base_frame)" />
     <param name="local_costmap/global_frame" value="$(arg odom_frame)" />
     <param name="local_costmap/robot_base_frame" value="$(arg base_frame)" />
+
+    <!-- Make sure the local planner reads the correct odom topic -->
+    <param name="DWAPlannerROS/odom_topic" value="$(arg odom_topic)" />
+
+    <!-- Remap cmd_vel to the Gazebo robot namespace -->
+    <remap from="cmd_vel" to="$(arg cmd_vel_topic)" />
+
+    <!-- Optional: remap odom name in case other plugins inside move_base use it -->
+    <remap from="odom" to="$(arg odom_topic)" />
   </node>
 </launch>

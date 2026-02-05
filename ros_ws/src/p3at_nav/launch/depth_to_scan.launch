@@ -1,18 +1,48 @@
 <launch>
-  <!-- Generate camera_info from depth image (perfect sync) -->
-  <node pkg="p3at_nav" type="depth_camera_info_from_image.py" name="depth_camera_info_generator" output="screen"/>
+  <!--
+    Depth image -> LaserScan conversion.
 
-  <!-- Depth to LaserScan conversion -->
+    URDF (p3at_sim/urdf/p3at_with_depth_camera.urdf.xacro) publishes:
+      /sim_p3at/camera/depth/image_rect_raw
+      /sim_p3at/camera/depth/camera_info
+
+    In practice, camera_info can be 0 Hz or not time-aligned with the depth image.
+    depthimage_to_laserscan relies on synchronized Image and CameraInfo, so we publish
+    a synthetic camera_info topic whose header.stamp exactly matches the depth image.
+  -->
+
+  <arg name="depth_image_topic" default="/sim_p3at/camera/depth/image_rect_raw" />
+  <arg name="camera_info_sync_topic" default="/sim_p3at/camera/depth/camera_info_sync" />
+  <arg name="camera_frame" default="camera_depth_optical_frame" />
+  <arg name="scan_topic" default="/scan" />
+
+  <!-- Match the URDF camera settings -->
+  <arg name="width" default="640" />
+  <arg name="height" default="480" />
+  <arg name="horizontal_fov" default="1.211" />
+
+  <!-- 1) Publish a synthetic, time-aligned CameraInfo -->
+  <node pkg="p3at_nav" type="camera_info_from_image_stamp.py" name="camera_info_from_image_stamp" output="screen">
+    <param name="in_image_topic" value="$(arg depth_image_topic)" />
+    <param name="out_info_topic" value="$(arg camera_info_sync_topic)" />
+    <param name="frame_id" value="$(arg camera_frame)" />
+    <param name="width" value="$(arg width)" />
+    <param name="height" value="$(arg height)" />
+    <param name="horizontal_fov" value="$(arg horizontal_fov)" />
+  </node>
+
+  <!-- 2) Convert depth image to LaserScan -->
   <node pkg="depthimage_to_laserscan" type="depthimage_to_laserscan" name="depth_to_scan" output="screen">
-    <!-- 使用完整的 depth/depth 路径 -->
-    <remap from="image"       to="/sim_p3at/camera/depth/depth/image_raw"/>
-    <remap from="camera_info" to="/sim_p3at/camera/depth/depth/camera_info"/>
-    <remap from="scan"        to="/scan"/>
+    <remap from="image" to="$(arg depth_image_topic)" />
+    <remap from="camera_info" to="$(arg camera_info_sync_topic)" />
+    <remap from="scan" to="$(arg scan_topic)" />
 
-    <param name="output_frame_id" value="base_link"/>
-    <param name="scan_time" value="0.033"/>
-    <param name="range_min" value="0.2"/>
-    <param name="range_max" value="10.0"/>
-    <param name="scan_height" value="10"/>
+    <!-- Keep the scan frame as the camera optical frame. Costmaps and gmapping will TF it. -->
+    <param name="output_frame_id" value="$(arg camera_frame)" />
+    <param name="scan_time" value="0.033" />
+    <param name="range_min" value="0.2" />
+    <param name="range_max" value="10.0" />
+    <param name="scan_height" value="10" />
+    <param name="queue_size" value="10" />
   </node>
 </launch>

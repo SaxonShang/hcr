@@ -9,6 +9,7 @@ catkin_install_python(PROGRAMS
   scripts/follow_target.py
   scripts/target_pos_mux.py
   scripts/target_candidate_selector.py
+  scripts/mock_yolo_from_gazebo.py
   DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
 )
 
