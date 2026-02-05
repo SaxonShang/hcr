@@ -20,7 +20,7 @@ class CameraInfoRelay:
         
         # Publish to depth camera_info
         self.pub = rospy.Publisher(
-            '/sim_p3at/camera/depth/camera_info',
+            '/sim_p3at/camera/depth/depth/camera_info',
             CameraInfo,
             queue_size=10
         )

@@ -27,13 +27,14 @@ class CameraInfoFromImageStamp:
 
         # Topics (match the URDF plugin names)
         self.in_image_topic = rospy.get_param(
-            "~in_image_topic", "/sim_p3at/camera/depth/image_rect_raw"
+            "~in_image_topic", "/sim_p3at/camera/depth/depth/image_raw"
         )
-        # NOTE: depthimage_to_laserscan (CameraSubscriber) expects CameraInfo on
-        # /sim_p3at/camera/depth/camera_info when the depth image topic is
-        # /sim_p3at/camera/depth/image_rect_raw.
+        # NOTE: depthimage_to_laserscan (CameraSubscriber) assumes the CameraInfo is a
+        # sibling of the image topic. When the depth image is
+        # /sim_p3at/camera/depth/depth/image_raw, the expected CameraInfo is
+        # /sim_p3at/camera/depth/depth/camera_info.
         self.out_info_topic = rospy.get_param(
-            "~out_info_topic", "/sim_p3at/camera/depth/camera_info"
+            "~out_info_topic", "/sim_p3at/camera/depth/depth/camera_info"
         )
 
         # Compute pinhole intrinsics from HFOV and image width (assume square pixels)

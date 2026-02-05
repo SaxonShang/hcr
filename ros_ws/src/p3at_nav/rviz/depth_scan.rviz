@@ -75,7 +75,7 @@ Visualization Manager:
     - Class: rviz/Image
       Name: Depth Camera
       Enabled: true
-      Topic: /sim_p3at/camera/depth/image_rect_raw
+      Topic: /sim_p3at/camera/depth/depth/image_raw
       Transport Hint: raw
       Queue Size: 2
       Unreliable: false
@@ -107,8 +107,6 @@ Visualization Manager:
     - Class: rviz/Measure
     - Class: rviz/SetInitialPose
       Topic: /initialpose
-    - Class: rviz/SetGoal
-      Topic: /move_base_simple/goal
     - Class: rviz/PublishPoint
       Single click: true
       Topic: /clicked_point

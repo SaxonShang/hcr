@@ -20,7 +20,7 @@ localization_mode: 1
 # If your depth topic is different, change it here or override via launch args.
 # This is overridden by the dynamic_map.launch arg in most launches, but keep it
 # consistent with the Gazebo P3AT demo by default.
-depth_image_topic: /sim_p3at/camera/depth/image_rect_raw
+depth_image_topic: /sim_p3at/camera/depth/depth/image_raw
 pose_topic: /robot/pose
 odom_topic: /odom
 

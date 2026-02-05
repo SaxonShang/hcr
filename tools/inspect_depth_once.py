@@ -7,7 +7,7 @@ from cv_bridge import CvBridge
 
 def main():
     rospy.init_node("inspect_depth_once", anonymous=True)
-    topic = rospy.get_param("~image_topic", "/sim_p3at/camera/depth/image_rect_raw")
+    topic = rospy.get_param("~image_topic", "/sim_p3at/camera/depth/depth/image_raw")
 
     msg = rospy.wait_for_message(topic, Image, timeout=5.0)
     bridge = CvBridge()

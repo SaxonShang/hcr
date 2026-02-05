@@ -173,6 +173,8 @@ source devel/setup.bash  # or setup.zsh
 rviz -d src/p3at_nav/rviz/depth_scan.rviz
 ```
 
+**Note:** Option 1 is a perception/visualization demo. It does not start the navigation stack, so setting a "2D Nav Goal" in RViz will not move the robot. Use keyboard teleop, or run Option 2 + move_base (below) if you want goal-based navigation.
+
 ### Option 2: SLAM Mapping
 
 #### Terminal 1: Gazebo Simulation
@@ -201,6 +203,15 @@ roslaunch p3at_nav gmapping_slam.launch
 source /opt/ros/noetic/setup.zsh
 source ~/ELEC70015_Human-Centered-Robotics-2026_Imperial/ros_ws/devel/setup.zsh
 rosrun teleop_twist_keyboard teleop_twist_keyboard.py cmd_vel:=/sim_p3at/cmd_vel
+```
+
+#### Optional Terminal 5: Goal-based Navigation (move_base)
+If you want to click "2D Nav Goal" in RViz and have the robot drive there, start move_base:
+
+```bash
+source /opt/ros/noetic/setup.zsh
+source ~/ELEC70015_Human-Centered-Robotics-2026_Imperial/ros_ws/devel/setup.zsh
+roslaunch p3at_navigation move_base_gmapping.launch
 ```
 
 **Keyboard Controls:**
@@ -297,11 +308,11 @@ Depth-to-laserscan conversion and GMapping SLAM for 2D mapping and navigation. T
 ```
 Gazebo Depth Camera
         ↓
-/sim_p3at/camera/depth/image_rect_raw
+/sim_p3at/camera/depth/depth/image_raw
         ↓
 camera_info_from_image_stamp
         ↓
-/sim_p3at/camera/depth/camera_info
+/sim_p3at/camera/depth/depth/camera_info
         ↓
 depthimage_to_laserscan (output_frame_id: camera_depth_optical_frame)
         ↓
@@ -366,8 +377,9 @@ MobileRobots AMR configuration files.
 ```bash
 /sim_p3at/camera/color/image_raw          # RGB image (sensor_msgs/Image)
 /sim_p3at/camera/color/camera_info        # RGB camera calibration
-/sim_p3at/camera/depth/image_rect_raw     # Depth image (32FC1, 640x480)
-/sim_p3at/camera/depth/camera_info   # Depth camera calibration (synthetic, time-aligned)
+/sim_p3at/camera/depth/depth/image_raw    # True metric depth image (32FC1/16UC1)
+/sim_p3at/camera/depth/depth/camera_info  # Depth camera calibration (synthetic, time-aligned)
+/sim_p3at/camera/depth/image_rect_raw     # Visualization stream (often rgb8)
 /sim_p3at/camera/depth/points             # Point cloud (sensor_msgs/PointCloud2)
 ```
 
@@ -398,7 +410,7 @@ MobileRobots AMR configuration files.
 │  ┌─────────────────┐                                                │
 │  │   P3AT Robot    │                                                │
 │  │  ┌───────────┐  │                                                │
-│  │  │Depth Cam  │──┼──→ /sim_p3at/camera/depth/image_rect_raw      │
+│  │  │Depth Cam  │──┼──→ /sim_p3at/camera/depth/depth/image_raw     │
 │  │  │(no lidar!)│  │                                                │
 │  │  └───────────┘  │                                                │
 │  │                 │                                                │
@@ -411,7 +423,7 @@ MobileRobots AMR configuration files.
 ┌─────────────────────────────────────────────────────────────────────┐
 │                      Perception Pipeline                           │
 │                                                                     │
-│  /sim_p3at/camera/depth/image_rect_raw                             │
+│  /sim_p3at/camera/depth/depth/image_raw                            │
 │         │                                                           │
 │         ▼                                                           │
 │  ┌─────────────────────────────────┐                               │
@@ -419,7 +431,7 @@ MobileRobots AMR configuration files.
 │  └─────────────────────────────────┘                               │
 │         │                                                           │
 │         ▼                                                           │
-│  /sim_p3at/camera/depth/camera_info                           │
+│  /sim_p3at/camera/depth/depth/camera_info                          │
 │         │                                                           │
 │         ▼                                                           │
 │  ┌─────────────────────────────┐                                   │
@@ -586,10 +598,10 @@ rosnode list
 rostopic hz /sim_p3at/camera/color/image_raw
 
 # Depth image (~30 Hz)
-rostopic hz /sim_p3at/camera/depth/image_rect_raw
+rostopic hz /sim_p3at/camera/depth/depth/image_raw
 
 # Camera info (~30 Hz, synchronized)
-rostopic hz /sim_p3at/camera/depth/camera_info
+rostopic hz /sim_p3at/camera/depth/depth/camera_info
 
 # Laser scan (~30 Hz)
 rostopic hz /scan
@@ -743,7 +755,7 @@ rostopic info /scan
 rosnode info /depth_to_scan
 
 # Verify depth image is available
-rostopic hz /sim_p3at/camera/depth/image_rect_raw
+rostopic hz /sim_p3at/camera/depth/depth/image_raw
 ```
 
 **Note:** Even if `rosnode info /depth_to_scan` shows empty subscriptions, check `/scan` frequency:
@@ -752,8 +764,8 @@ rostopic hz /scan  # Should be ~30 Hz if working
 ```
 
 If `/scan` has no data:
-1. Verify depth camera is publishing: `rostopic hz /sim_p3at/camera/depth/image_rect_raw`
-2. Check synthetic camera_info synchronization: `rostopic hz /sim_p3at/camera/depth/camera_info`
+1. Verify depth camera is publishing: `rostopic hz /sim_p3at/camera/depth/depth/image_raw`
+2. Check synthetic camera_info synchronization: `rostopic hz /sim_p3at/camera/depth/depth/camera_info`
 3. Restart the perception pipeline:
    ```bash
    roslaunch p3at_nav depth_to_scan.launch
@@ -974,8 +986,8 @@ rotation_rpy: [-90°, 0°, -90°]      # Optical frame convention
 
 **Topic Remapping:**
 ```xml
-<remap from="image"       to="/sim_p3at/camera/depth/image_rect_raw"/>
-<remap from="camera_info" to="/sim_p3at/camera/depth/camera_info"/>
+<remap from="image"       to="/sim_p3at/camera/depth/depth/image_raw"/>
+<remap from="camera_info" to="/sim_p3at/camera/depth/depth/camera_info"/>
 <remap from="scan"        to="/scan"/>
 ```
 
@@ -1031,7 +1043,7 @@ python3 tools/relay_camera_info.py
 # Complete system check (basic simulation)
 echo "=== Nodes ===" && rosnode list
 echo "=== Scan Hz ===" && timeout 3 rostopic hz /scan
-echo "=== Depth Hz ===" && timeout 3 rostopic hz /sim_p3at/camera/depth/image_rect_raw
+echo "=== Depth Hz ===" && timeout 3 rostopic hz /sim_p3at/camera/depth/depth/image_raw
 echo "=== TF ===" && rosrun tf tf_echo base_link camera_depth_optical_frame
 
 # SLAM system check
@@ -1124,8 +1136,8 @@ Verify everything works:
 - [ ] Robot spawns in simulation (no errors in terminal)
 - [ ] All 7 core nodes running: `rosnode list`
 - [ ] Camera topics exist: `rostopic list | grep camera`
-- [ ] Depth image publishes at ~30Hz: `rostopic hz /sim_p3at/camera/depth/image_rect_raw`
-- [ ] Camera info publishes at ~30Hz: `rostopic hz /sim_p3at/camera/depth/camera_info`
+- [ ] Depth image publishes at ~30Hz: `rostopic hz /sim_p3at/camera/depth/depth/image_raw`
+- [ ] Camera info publishes at ~30Hz: `rostopic hz /sim_p3at/camera/depth/depth/camera_info`
 - [ ] Perception pipeline works: `roslaunch p3at_nav depth_to_scan.launch`
 - [ ] Scan data publishes at ~30Hz: `rostopic hz /scan`
 - [ ] Scan frame_id is `camera_depth_optical_frame`: `rostopic echo /scan -n 1 | grep frame_id`

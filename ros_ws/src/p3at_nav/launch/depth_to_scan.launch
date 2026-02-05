@@ -2,25 +2,28 @@
   <!--
     Depth image -> LaserScan conversion.
 
-    URDF (p3at_sim/urdf/p3at_with_depth_camera.urdf.xacro) publishes:
-      /sim_p3at/camera/depth/image_rect_raw
-      /sim_p3at/camera/depth/camera_info
+    URDF (p3at_sim/urdf/p3at_with_depth_camera.urdf.xacro) publishes multiple streams.
+    The Gazebo depth plugin typically exposes the true metric depth image on:
+      /sim_p3at/camera/depth/depth/image_raw
+    and a sibling CameraInfo on:
+      /sim_p3at/camera/depth/depth/camera_info
 
     In practice, camera_info can be 0 Hz or not time-aligned with the depth image.
     depthimage_to_laserscan relies on synchronized Image and CameraInfo, so we publish
     a synthetic camera_info topic whose header.stamp exactly matches the depth image.
   -->
 
-  <arg name="depth_image_topic" default="/sim_p3at/camera/depth/image_rect_raw" />
+  <!-- Use the true depth image (32FC1/16UC1). image_rect_raw is often rgb8. -->
+  <arg name="depth_image_topic" default="/sim_p3at/camera/depth/depth/image_raw" />
   <!--
     IMPORTANT:
     depthimage_to_laserscan subscribes via image_transport::CameraSubscriber.
-    When the image topic is an absolute name like /sim_p3at/camera/depth/image_rect_raw,
-    the CameraInfo topic is assumed to be /sim_p3at/camera/depth/camera_info.
-    Gazebo often publishes camera_info at 0 Hz (updateRate=0.0), so we publish a
-    synthetic, time-aligned CameraInfo directly onto that expected topic.
+    When the image topic is /sim_p3at/camera/depth/depth/image_raw,
+    the CameraInfo topic is assumed to be /sim_p3at/camera/depth/depth/camera_info.
+    Gazebo camera_info can be 0 Hz or not time-aligned, so we publish a synthetic,
+    time-aligned CameraInfo directly onto that expected topic.
   -->
-  <arg name="camera_info_sync_topic" default="/sim_p3at/camera/depth/camera_info" />
+  <arg name="camera_info_sync_topic" default="/sim_p3at/camera/depth/depth/camera_info" />
   <arg name="camera_frame" default="camera_depth_optical_frame" />
   <arg name="scan_topic" default="/scan" />
 

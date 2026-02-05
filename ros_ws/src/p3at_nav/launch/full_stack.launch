@@ -11,7 +11,8 @@
   <arg name="use_mock_yolo" default="false" />
 
   <!-- Depth topic produced by p3at_sim's Gazebo depth camera plugin -->
-  <arg name="depth_topic" default="/sim_p3at/camera/depth/image_rect_raw" />
+  <!-- Use the true depth image (32FC1/16UC1). The image_rect_raw stream is often rgb8. -->
+  <arg name="depth_topic" default="/sim_p3at/camera/depth/depth/image_raw" />
 
   <!-- If use_yolo_candidates=true, target_follower will select from /targets/candidates.
        Otherwise it will use map_manager's /dynamic_map/dynamic_pos.

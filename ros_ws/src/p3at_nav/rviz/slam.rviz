@@ -126,7 +126,7 @@ Visualization Manager:
 
     - Class: rviz/Image
       Enabled: false
-      Image Topic: /sim_p3at/camera/depth/image_rect_raw
+      Image Topic: /sim_p3at/camera/depth/depth/image_raw
       Max Value: 1
       Median window: 5
       Min Value: 0
