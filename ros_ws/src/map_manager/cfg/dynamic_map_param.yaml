@@ -18,7 +18,9 @@ localization_mode: 1
 
 # Topics (set these to match your simulation)
 # If your depth topic is different, change it here or override via launch args.
-depth_image_topic: /camera/depth
+# This is overridden by the dynamic_map.launch arg in most launches, but keep it
+# consistent with the Gazebo P3AT demo by default.
+depth_image_topic: /sim_p3at/camera/depth/image_rect_raw
 pose_topic: /robot/pose
 odom_topic: /odom
 
@@ -28,7 +30,10 @@ robot_size: [0.55, 0.55, 0.30]
 # Camera Parameters
 # depth_intrinsics: [fx, fy, cx, cy]
 # Set these from /camera/depth/camera_info once your Gazebo camera is running.
-depth_intrinsics: [554.254691191187, 554.254691191187, 320.5, 240.5]
+# These match p3at_nav/scripts/camera_info_from_image_stamp.py:
+#   fx = fy = width / (2*tan(hfov/2)) with width=640, hfov=1.211
+#   cx = 320.0, cy = 240.0
+depth_intrinsics: [462.2663, 462.2663, 320.0, 240.0]
 
 # Scale used to convert TYPE_32FC1 depth (meters) to uint16 (depthScaleFactor * meters).
 # Also used as inv_factor when projecting points: depth_m = depth_uint16 / depthScaleFactor.
@@ -45,9 +50,9 @@ image_rows: 480
 
 # body_to_camera is a 4x4 transform (row-major) from robot/body frame to camera frame.
 # Update this if your URDF mount differs.
-body_to_camera: [0.0,  0.0,  1.0,  0.20,
+body_to_camera: [0.0,  0.0,  1.0,  0.25,
                 -1.0,  0.0,  0.0,  0.00,
-                 0.0, -1.0,  0.0,  0.25,
+                 0.0, -1.0,  0.0,  0.45,
                  0.0,  0.0,  0.0,  1.0]
 
 # Raycasting

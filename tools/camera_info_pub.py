@@ -9,7 +9,7 @@ class CameraInfoFromImageStamp:
         self.height = rospy.get_param("~height", 480)
         self.hfov   = rospy.get_param("~horizontal_fov", 1.211)  # rad
         self.frame  = rospy.get_param("~frame_id", "camera_depth_optical_frame")
-        self.out_topic = rospy.get_param("~out_topic", "/sim_p3at/camera/depth/camera_info_sync")
+        self.out_topic = rospy.get_param("~out_topic", "/sim_p3at/camera/depth/camera_info")
         self.in_image_topic = rospy.get_param("~in_image_topic", "/sim_p3at/camera/depth/image_rect_raw")
 
         fx = self.width / (2.0 * math.tan(self.hfov / 2.0))

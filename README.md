@@ -301,7 +301,7 @@ Gazebo Depth Camera
         ↓
 camera_info_from_image_stamp
         ↓
-/sim_p3at/camera/depth/camera_info_sync
+/sim_p3at/camera/depth/camera_info
         ↓
 depthimage_to_laserscan (output_frame_id: camera_depth_optical_frame)
         ↓
@@ -367,7 +367,7 @@ MobileRobots AMR configuration files.
 /sim_p3at/camera/color/image_raw          # RGB image (sensor_msgs/Image)
 /sim_p3at/camera/color/camera_info        # RGB camera calibration
 /sim_p3at/camera/depth/image_rect_raw     # Depth image (32FC1, 640x480)
-/sim_p3at/camera/depth/camera_info_sync   # Depth camera calibration (synthetic, time-aligned)
+/sim_p3at/camera/depth/camera_info   # Depth camera calibration (synthetic, time-aligned)
 /sim_p3at/camera/depth/points             # Point cloud (sensor_msgs/PointCloud2)
 ```
 
@@ -419,7 +419,7 @@ MobileRobots AMR configuration files.
 │  └─────────────────────────────────┘                               │
 │         │                                                           │
 │         ▼                                                           │
-│  /sim_p3at/camera/depth/camera_info_sync                           │
+│  /sim_p3at/camera/depth/camera_info                           │
 │         │                                                           │
 │         ▼                                                           │
 │  ┌─────────────────────────────┐                                   │
@@ -589,7 +589,7 @@ rostopic hz /sim_p3at/camera/color/image_raw
 rostopic hz /sim_p3at/camera/depth/image_rect_raw
 
 # Camera info (~30 Hz, synchronized)
-rostopic hz /sim_p3at/camera/depth/camera_info_sync
+rostopic hz /sim_p3at/camera/depth/camera_info
 
 # Laser scan (~30 Hz)
 rostopic hz /scan
@@ -753,7 +753,7 @@ rostopic hz /scan  # Should be ~30 Hz if working
 
 If `/scan` has no data:
 1. Verify depth camera is publishing: `rostopic hz /sim_p3at/camera/depth/image_rect_raw`
-2. Check synthetic camera_info synchronization: `rostopic hz /sim_p3at/camera/depth/camera_info_sync`
+2. Check synthetic camera_info synchronization: `rostopic hz /sim_p3at/camera/depth/camera_info`
 3. Restart the perception pipeline:
    ```bash
    roslaunch p3at_nav depth_to_scan.launch
@@ -975,7 +975,7 @@ rotation_rpy: [-90°, 0°, -90°]      # Optical frame convention
 **Topic Remapping:**
 ```xml
 <remap from="image"       to="/sim_p3at/camera/depth/image_rect_raw"/>
-<remap from="camera_info" to="/sim_p3at/camera/depth/camera_info_sync"/>
+<remap from="camera_info" to="/sim_p3at/camera/depth/camera_info"/>
 <remap from="scan"        to="/scan"/>
 ```
 
@@ -1125,7 +1125,7 @@ Verify everything works:
 - [ ] All 7 core nodes running: `rosnode list`
 - [ ] Camera topics exist: `rostopic list | grep camera`
 - [ ] Depth image publishes at ~30Hz: `rostopic hz /sim_p3at/camera/depth/image_rect_raw`
-- [ ] Camera info publishes at ~30Hz: `rostopic hz /sim_p3at/camera/depth/camera_info_sync`
+- [ ] Camera info publishes at ~30Hz: `rostopic hz /sim_p3at/camera/depth/camera_info`
 - [ ] Perception pipeline works: `roslaunch p3at_nav depth_to_scan.launch`
 - [ ] Scan data publishes at ~30Hz: `rostopic hz /scan`
 - [ ] Scan frame_id is `camera_depth_optical_frame`: `rostopic echo /scan -n 1 | grep frame_id`

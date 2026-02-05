@@ -17,7 +17,9 @@ class DepthCameraInfoGenerator:
     def __init__(self):
         # Topics (URDF-consistent defaults)
         self.in_image_topic = rospy.get_param("~in_image_topic", "/sim_p3at/camera/depth/image_rect_raw")
-        self.out_info_topic = rospy.get_param("~out_info_topic", "/sim_p3at/camera/depth/camera_info_sync")
+        # Keep consistent with the main depth_to_scan.launch fix:
+        # publish directly to the CameraInfo topic expected by depthimage_to_laserscan.
+        self.out_info_topic = rospy.get_param("~out_info_topic", "/sim_p3at/camera/depth/camera_info")
         self.frame_id = rospy.get_param("~frame_id", "camera_depth_optical_frame")
 
         # Intrinsics

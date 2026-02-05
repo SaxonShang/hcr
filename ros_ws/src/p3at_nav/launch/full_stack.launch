@@ -16,13 +16,13 @@
   <!-- If use_yolo_candidates=true, target_follower will select from /targets/candidates.
        Otherwise it will use map_manager's /dynamic_map/dynamic_pos.
   -->
-  <arg name="real_target_topic" default="$(eval '/targets/selected_pos' if (arg('use_yolo_candidates') or arg('use_mock_yolo')) else '/dynamic_map/dynamic_pos')" />
+  <arg name="real_target_topic" default="$(eval '/targets/selected_pos' if (arg('use_yolo_candidates') == 'true' or arg('use_mock_yolo') == 'true') else '/dynamic_map/dynamic_pos')" />
 
   <!-- 1) Gazebo simulation (includes the depth camera) -->
   <include file="$(find p3at_sim)/launch/bringup_depth.launch" />
 
   <!-- Optional: drive the red target_box in a circle -->
-  <include file="$(find p3at_sim)/launch/move_target_box.launch" if="$(eval arg('use_moving_target') or arg('use_mock_yolo'))" />
+  <include file="$(find p3at_sim)/launch/move_target_box.launch" if="$(eval arg('use_moving_target') == 'true' or arg('use_mock_yolo') == 'true')" />
 
   <!-- 2) Depth image -> LaserScan (/scan) -->
   <include file="$(find p3at_nav)/launch/depth_to_scan.launch">
@@ -55,7 +55,7 @@
   <!-- 7) Target selection (optional): pick the easiest target from YOLO-style candidates.
        The selector subscribes to hcr_msgs/TargetCandidateArray on /targets/candidates and publishes /targets/selected_pos.
   -->
-  <node pkg="target_follower" type="target_candidate_selector.py" name="target_candidate_selector" output="screen" if="$(eval arg('use_yolo_candidates') or arg('use_mock_yolo'))">
+  <node pkg="target_follower" type="target_candidate_selector.py" name="target_candidate_selector" output="screen" if="$(eval arg('use_yolo_candidates') == 'true' or arg('use_mock_yolo') == 'true')">
     <param name="candidates_topic" value="/targets/candidates" />
     <param name="selected_topic" value="/targets/selected_pos" />
     <param name="map_frame" value="map" />
@@ -81,7 +81,7 @@
   </node>
 
   <node pkg="target_follower" type="follow_target.py" name="follow_target" output="screen">
-    <param name="target_topic" value="$(eval '/dynamic_map/target_pos' if arg('use_fake_target') else arg('real_target_topic'))" />
+    <param name="target_topic" value="$(eval '/dynamic_map/target_pos' if (arg('use_fake_target') == 'true') else arg('real_target_topic'))" />
   </node>
 
   <!-- 9) RViz -->

@@ -12,7 +12,15 @@
   -->
 
   <arg name="depth_image_topic" default="/sim_p3at/camera/depth/image_rect_raw" />
-  <arg name="camera_info_sync_topic" default="/sim_p3at/camera/depth/camera_info_sync" />
+  <!--
+    IMPORTANT:
+    depthimage_to_laserscan subscribes via image_transport::CameraSubscriber.
+    When the image topic is an absolute name like /sim_p3at/camera/depth/image_rect_raw,
+    the CameraInfo topic is assumed to be /sim_p3at/camera/depth/camera_info.
+    Gazebo often publishes camera_info at 0 Hz (updateRate=0.0), so we publish a
+    synthetic, time-aligned CameraInfo directly onto that expected topic.
+  -->
+  <arg name="camera_info_sync_topic" default="/sim_p3at/camera/depth/camera_info" />
   <arg name="camera_frame" default="camera_depth_optical_frame" />
   <arg name="scan_topic" default="/scan" />
 
