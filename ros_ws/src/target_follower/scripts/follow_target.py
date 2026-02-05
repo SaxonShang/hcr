@@ -3,7 +3,6 @@ import math
 import rospy
 import actionlib
 import tf2_ros
-import tf2_geometry_msgs  # noqa: F401
 from geometry_msgs.msg import PointStamped
 from move_base_msgs.msg import MoveBaseAction, MoveBaseGoal
 
